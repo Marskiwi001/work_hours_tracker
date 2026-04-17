@@ -134,6 +134,16 @@
       cursor: pointer;
     }
 
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-control {
+      width: 100%;
+      height: 40px;
+      box-sizing: border-box;
+    }
+
     /* Login Styles - simplified */
     #login-container {
       width: 300px;
@@ -155,13 +165,6 @@
       color: #fff;
       font-size: 16px;
       border-radius: 4px;
-    }
-
-    #userSelect {
-      height: 40px;
-      width: 100%;
-      box-sizing: border-box;
-      margin-bottom: 30px;
     }
 
     @media (max-width: 480px) {
@@ -229,16 +232,76 @@
 <body>
 
   <div id="login-container">
-    <h2>登录</h2>
-    <div class="form-group">
-      <label for="userSelect" style="text-align: left;">选择用户</label>
-      <select id="userSelect" class="form-control">
-        <option value="火星猕猴桃">火星猕猴桃</option>
-        <option value="火星哈密瓜">火星哈密瓜</option>
-      </select>
+    <div id="login-section">
+      <h2>登录</h2>
+      <div class="form-group">
+        <label for="loginEmail" style="text-align: left;">用户名或邮箱</label>
+        <input id="loginEmail" type="text" class="form-control" placeholder="请输入用户名或邮箱">
+      </div>
+      <div class="form-group">
+        <label for="loginPassword" style="text-align: left;">密码</label>
+        <input id="loginPassword" type="password" class="form-control" placeholder="请输入密码">
+      </div>
+      <button class="btn-primary" onclick="handleLogin()" style="width: 100%;">登录</button>
+      <div style="margin-top: 12px;">
+        <button class="btn-outline" onclick="showRegister()" style="width: 100%;">注册新用户</button>
+      </div>
+      <div style="margin-top: 12px;">
+        <button class="btn-outline" onclick="showForgotPassword()" style="width: 100%;">忘记密码</button>
+      </div>
+      <p id="login-error"></p>
     </div>
-    <button class="btn-primary" onclick="handleLogin()" style="width: 100%;">登录</button>
-    <p id="login-error"></p>
+
+    <div id="register-section" style="display: none;">
+      <h2>注册</h2>
+      <div class="form-group">
+        <label for="registerUsername" style="text-align: left;">用户名</label>
+        <input id="registerUsername" type="text" class="form-control" placeholder="请输入用户名">
+      </div>
+      <div class="form-group">
+        <label for="registerEmail" style="text-align: left;">邮箱</label>
+        <input id="registerEmail" type="email" class="form-control" placeholder="请输入邮箱">
+      </div>
+      <div class="form-group">
+        <label for="registerPassword" style="text-align: left;">密码</label>
+        <input id="registerPassword" type="password" class="form-control" placeholder="请输入密码">
+      </div>
+      <button class="btn-primary" onclick="handleRegister()" style="width: 100%;">注册并发送确认邮件</button>
+      <div style="margin-top: 12px;">
+        <button class="btn-outline" onclick="hideRegister()" style="width: 100%;">返回登录</button>
+      </div>
+      <p id="register-error"></p>
+    </div>
+
+    <div id="forgot-section" style="display: none;">
+      <h2>找回密码</h2>
+      <div class="form-group">
+        <label for="forgotUsername" style="text-align: left;">用户名</label>
+        <input id="forgotUsername" type="text" class="form-control" placeholder="请输入用户名">
+      </div>
+      <div class="form-group">
+        <label for="forgotEmail" style="text-align: left;">邮箱</label>
+        <input id="forgotEmail" type="email" class="form-control" placeholder="请输入邮箱">
+      </div>
+      <button id="forgotSendBtn" class="btn-primary" onclick="sendPasswordResetEmail()" style="width: 100%;">发送重置邮件</button>
+      <div style="margin-top: 12px;">
+        <button class="btn-outline" onclick="hideForgotPassword()" style="width: 100%;">返回登录</button>
+      </div>
+      <p id="forgot-error"></p>
+    </div>
+
+    <div id="reset-section" style="display: none;">
+      <h2>重置密码</h2>
+      <div class="form-group">
+        <label for="resetNewPassword" style="text-align: left;">新密码</label>
+        <input id="resetNewPassword" type="password" class="form-control" placeholder="请输入新密码（至少 6 位）">
+      </div>
+      <button class="btn-primary" onclick="handleUpdatePassword()" style="width: 100%;">更新密码</button>
+      <div style="margin-top: 12px;">
+        <button class="btn-outline" onclick="hideResetPassword()" style="width: 100%;">返回登录</button>
+      </div>
+      <p id="reset-error"></p>
+    </div>
   </div>
 
   <div id="app-container">
@@ -309,6 +372,8 @@
     let workDataCache = {};
     let workDataCacheKey = null;
     let renderSeq = 0;
+    let forgotCooldownTimer = null;
+    let forgotCooldownUntil = 0;
 
     const SUPABASE_URL = 'https://rmuzdaknrjrhettqnfai.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_tUx4wW7WU78eVtPCm2cS0w_PkFxEk9x';
@@ -316,9 +381,6 @@
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
       : null;
     window.supabaseClient = supabaseClient;
-
-    // --- Mock User Database ---
-    const USERS = ["火星猕猴桃", "火星哈密瓜"];
 
     // --- Core Functions ---
     function formatDateLocal(date) {
@@ -334,6 +396,41 @@
 
     function normalizeTimes(items) {
       return (items || []).map((x) => (typeof x === 'string' ? x : x.ts));
+    }
+
+    function normalizeEmail(value) {
+      return String(value || '').trim().toLowerCase();
+    }
+
+    function setForgotButtonState(disabled, text) {
+      const btn = document.getElementById('forgotSendBtn');
+      if (!btn) return;
+      btn.disabled = !!disabled;
+      btn.textContent = text || '发送重置邮件';
+    }
+
+    function startForgotCooldown(seconds) {
+      const safeSeconds = Math.max(1, Number(seconds) || 1);
+      forgotCooldownUntil = Date.now() + safeSeconds * 1000;
+
+      if (forgotCooldownTimer) {
+        clearInterval(forgotCooldownTimer);
+        forgotCooldownTimer = null;
+      }
+
+      const tick = () => {
+        const left = Math.ceil((forgotCooldownUntil - Date.now()) / 1000);
+        if (left <= 0) {
+          setForgotButtonState(false, '发送重置邮件');
+          clearInterval(forgotCooldownTimer);
+          forgotCooldownTimer = null;
+          return;
+        }
+        setForgotButtonState(true, `请稍后重试（${left}s）`);
+      };
+
+      tick();
+      forgotCooldownTimer = setInterval(tick, 1000);
     }
 
     function getLocalData() {
@@ -413,52 +510,366 @@
       return workDataCache || {};
     }
 
-    // --- Authentication Logic ---
-    function handleLogin() {
-      const username = document.getElementById('userSelect').value;
-      const errorEl = document.getElementById('login-error');
+    function showRegister() {
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('register-section').style.display = 'block';
+      document.getElementById('forgot-section').style.display = 'none';
+      document.getElementById('reset-section').style.display = 'none';
+      document.getElementById('login-error').textContent = '';
+      document.getElementById('register-error').textContent = '';
+      document.getElementById('forgot-error').textContent = '';
+      document.getElementById('reset-error').textContent = '';
+      document.getElementById('registerUsername').value = '';
+      document.getElementById('registerEmail').value = '';
+      document.getElementById('registerPassword').value = '';
+    }
 
-      if (USERS.includes(username)) {
-        currentUsername = username;
-        sessionStorage.setItem('loggedInUser', username);
-        workDataCache = {};
-        workDataCacheKey = null;
-        document.getElementById('login-container').style.display = 'none';
-        document.getElementById('app-container').style.display = 'block';
-        document.getElementById('currentUser').textContent = `用户: ${username}`;
-        errorEl.textContent = '';
-        initApp();
-      } else {
-        errorEl.textContent = '请选择有效的用户';
-        currentUsername = null;
-        sessionStorage.removeItem('loggedInUser');
+    function hideRegister() {
+      document.getElementById('register-section').style.display = 'none';
+      document.getElementById('forgot-section').style.display = 'none';
+      document.getElementById('reset-section').style.display = 'none';
+      document.getElementById('login-section').style.display = 'block';
+      document.getElementById('register-error').textContent = '';
+    }
+
+    function showForgotPassword() {
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('register-section').style.display = 'none';
+      document.getElementById('forgot-section').style.display = 'block';
+      document.getElementById('reset-section').style.display = 'none';
+      document.getElementById('login-error').textContent = '';
+      document.getElementById('register-error').textContent = '';
+      document.getElementById('forgot-error').textContent = '';
+      document.getElementById('reset-error').textContent = '';
+      document.getElementById('forgotUsername').value = '';
+      document.getElementById('forgotEmail').value = '';
+      if (Date.now() >= forgotCooldownUntil) {
+        setForgotButtonState(false, '发送重置邮件');
       }
     }
 
-    function handleLogout() {
-      currentUsername = null;
-      sessionStorage.removeItem('loggedInUser');
+    function hideForgotPassword() {
+      document.getElementById('forgot-section').style.display = 'none';
+      document.getElementById('register-section').style.display = 'none';
+      document.getElementById('reset-section').style.display = 'none';
+      document.getElementById('login-section').style.display = 'block';
+      document.getElementById('forgot-error').textContent = '';
+    }
+
+    async function loadUsernameForSession(session) {
+      if (!supabaseClient || !session || !session.user) return null;
+      const authUserId = session.user.id;
+      const { data, error } = await supabaseClient
+        .from('app_users')
+        .select('username')
+        .eq('auth_user_id', authUserId)
+        .limit(1);
+      if (error) return (session.user.user_metadata && session.user.user_metadata.username) ? session.user.user_metadata.username : null;
+      if (!data || data.length === 0) return (session.user.user_metadata && session.user.user_metadata.username) ? session.user.user_metadata.username : null;
+      return data[0].username || null;
+    }
+
+    async function loadEmailByUsername(username) {
+      if (!supabaseClient) return null;
+      const cleanUsername = String(username || '').trim();
+      if (!cleanUsername) return null;
+      const { data, error } = await supabaseClient.rpc('get_login_email_by_username', {
+        p_username: cleanUsername
+      });
+      if (error || !data) return null;
+      return normalizeEmail(data);
+    }
+
+    async function ensureAppUserForSession(session, preferredUsername, preferredEmail) {
+      if (!supabaseClient || !session || !session.user) return;
+
+      const authUserId = session.user.id;
+      const metadataUsername = session.user.user_metadata && session.user.user_metadata.username
+        ? String(session.user.user_metadata.username).trim()
+        : '';
+      const username = String(preferredUsername || metadataUsername || '').trim();
+      const email = normalizeEmail(preferredEmail || session.user.email);
+
+      const { data: existing, error: existingError } = await supabaseClient
+        .from('app_users')
+        .select('id, username, email')
+        .eq('auth_user_id', authUserId)
+        .limit(1);
+
+      if (existingError) {
+        // 同步用户档案失败不应影响主登录流程
+        console.warn('load app_users failed:', existingError.message || existingError);
+        return;
+      }
+
+      if (existing && existing.length > 0) {
+        const row = existing[0];
+        const nextUsername = row.username || username;
+        const nextEmail = normalizeEmail(row.email || email);
+        const needsUpdate = nextUsername !== row.username || nextEmail !== normalizeEmail(row.email);
+        if (needsUpdate) {
+          const { error: updateError } = await supabaseClient
+            .from('app_users')
+            .update({ username: nextUsername, email: nextEmail })
+            .eq('id', row.id);
+          if (updateError) {
+            // 同步用户档案失败不应影响主登录流程
+            console.warn('update app_users failed:', updateError.message || updateError);
+          }
+        }
+        return;
+      }
+
+      // 无记录时不在前端登录流程中强制插入，避免 RLS 拦截登录
+      if (!username) return;
+    }
+
+    function showResetPassword() {
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('register-section').style.display = 'none';
+      document.getElementById('forgot-section').style.display = 'none';
+      document.getElementById('reset-section').style.display = 'block';
+      document.getElementById('login-error').textContent = '';
+      document.getElementById('register-error').textContent = '';
+      document.getElementById('forgot-error').textContent = '';
+      document.getElementById('reset-error').textContent = '';
+      document.getElementById('resetNewPassword').value = '';
+    }
+
+    function hideResetPassword() {
+      document.getElementById('reset-section').style.display = 'none';
+      document.getElementById('register-section').style.display = 'none';
+      document.getElementById('forgot-section').style.display = 'none';
+      document.getElementById('login-section').style.display = 'block';
+      document.getElementById('reset-error').textContent = '';
+    }
+
+    async function handleRegister() {
+      const errorEl = document.getElementById('register-error');
+      errorEl.textContent = '';
+
+      if (!supabaseClient) {
+        errorEl.textContent = 'Supabase 未初始化，无法注册';
+        return;
+      }
+
+      const username = document.getElementById('registerUsername').value.trim();
+      const email = normalizeEmail(document.getElementById('registerEmail').value);
+      const password = document.getElementById('registerPassword').value;
+
+      if (!username) {
+        errorEl.textContent = '请输入用户名';
+        return;
+      }
+      if (!email) {
+        errorEl.textContent = '请输入邮箱';
+        return;
+      }
+      if (!password || password.length < 6) {
+        errorEl.textContent = '密码至少需要 6 位';
+        return;
+      }
+
+      const existsEmail = await loadEmailByUsername(username);
+      if (existsEmail) {
+        errorEl.textContent = '用户名已存在，请更换用户名';
+        return;
+      }
+
+      const { data: signUpData, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { username },
+          emailRedirectTo: window.location.origin + window.location.pathname
+        }
+      });
+      if (error) {
+        errorEl.textContent = error.message;
+        return;
+      }
+
+      hideRegister();
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginEmail').value = email;
+      document.getElementById('login-error').textContent = '确认邮件已发送，请到邮箱点击链接完成注册；首次登录后会自动创建用户档案';
+    }
+
+    async function sendPasswordResetEmail() {
+      const errorEl = document.getElementById('forgot-error');
+      errorEl.textContent = '';
+      if (Date.now() < forgotCooldownUntil) {
+        const left = Math.ceil((forgotCooldownUntil - Date.now()) / 1000);
+        errorEl.textContent = `操作过于频繁，请 ${left} 秒后再试`;
+        return;
+      }
+
+      if (!supabaseClient) {
+        errorEl.textContent = 'Supabase 未初始化，无法发送重置邮件';
+        return;
+      }
+
+      const username = document.getElementById('forgotUsername').value.trim();
+      const email = normalizeEmail(document.getElementById('forgotEmail').value);
+      if (!username) {
+        errorEl.textContent = '请输入用户名';
+        return;
+      }
+      if (!email) {
+        errorEl.textContent = '请输入邮箱';
+        return;
+      }
+
+      const boundEmail = await loadEmailByUsername(username);
+      if (!boundEmail) {
+        errorEl.textContent = '用户名不存在';
+        return;
+      }
+      if (boundEmail !== email) {
+        errorEl.textContent = '用户名与邮箱不匹配';
+        return;
+      }
+
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + window.location.pathname
+      });
+      if (error) {
+        const msg = String(error.message || '').toLowerCase();
+        if (msg.includes('rate limit')) {
+          errorEl.textContent = '邮件发送过于频繁，请稍后再试';
+          startForgotCooldown(60);
+          return;
+        }
+        errorEl.textContent = error.message;
+        return;
+      }
+
+      errorEl.textContent = '重置邮件已发送，请到邮箱中完成密码重置';
+      startForgotCooldown(60);
+    }
+
+    async function handleUpdatePassword() {
+      const errorEl = document.getElementById('reset-error');
+      errorEl.textContent = '';
+
+      if (!supabaseClient) {
+        errorEl.textContent = 'Supabase 未初始化，无法更新密码';
+        return;
+      }
+
+      const newPassword = document.getElementById('resetNewPassword').value;
+      if (!newPassword || newPassword.length < 6) {
+        errorEl.textContent = '新密码至少需要 6 位';
+        return;
+      }
+
+      const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+      if (error) {
+        errorEl.textContent = error.message;
+        return;
+      }
+
+      await supabaseClient.auth.signOut();
+      hideResetPassword();
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('login-error').textContent = '密码已更新，请重新登录';
+    }
+
+    async function handleLogin() {
+      const errorEl = document.getElementById('login-error');
+      errorEl.textContent = '';
+
+      const account = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      if (!account) {
+        errorEl.textContent = '请输入用户名或邮箱';
+        return;
+      }
+      if (!password) {
+        errorEl.textContent = '请输入密码';
+        return;
+      }
+      if (!supabaseClient) {
+        errorEl.textContent = 'Supabase 未初始化，无法登录';
+        return;
+      }
+
+      let loginEmail = normalizeEmail(account);
+      if (!account.includes('@')) {
+        const mappedEmail = await loadEmailByUsername(account);
+        if (!mappedEmail) {
+          errorEl.textContent = '用户名不存在';
+          return;
+        }
+        loginEmail = mappedEmail;
+      }
+
+      const { error } = await supabaseClient.auth.signInWithPassword({ email: loginEmail, password });
+      if (error) {
+        errorEl.textContent = error.message;
+        return;
+      }
+
+      const { data } = await supabaseClient.auth.getSession();
+      const session = data ? data.session : null;
+      try {
+        await ensureAppUserForSession(session, account.includes('@') ? '' : account, loginEmail);
+      } catch (e) {
+        // 用户档案同步失败不阻断登录
+        console.warn('ensure app user failed:', (e && e.message) ? e.message : e);
+      }
+      const u = await loadUsernameForSession(session);
+      currentUsername = u || loginEmail;
       workDataCache = {};
       workDataCacheKey = null;
-      document.getElementById('login-container').style.display = 'block';
-      document.getElementById('app-container').style.display = 'none';
-      document.getElementById('userSelect').selectedIndex = 0;
+      document.getElementById('login-container').style.display = 'none';
+      document.getElementById('app-container').style.display = 'block';
+      document.getElementById('currentUser').textContent = `用户: ${currentUsername}`;
+      initApp();
     }
 
-    function checkLoginState() {
-      const user = sessionStorage.getItem('loggedInUser');
-      if (user && USERS.includes(user)) {
-        currentUsername = user;
-        workDataCache = {};
-        workDataCacheKey = null;
-        document.getElementById('login-container').style.display = 'none';
-        document.getElementById('app-container').style.display = 'block';
-        document.getElementById('currentUser').textContent = `用户: ${user}`;
-        initApp();
-      } else {
-        document.getElementById('login-container').style.display = 'block';
-        document.getElementById('app-container').style.display = 'none';
+    async function handleLogout() {
+      currentUsername = null;
+      workDataCache = {};
+      workDataCacheKey = null;
+
+      if (supabaseClient) {
+        await supabaseClient.auth.signOut();
       }
+
+      document.getElementById('login-container').style.display = 'block';
+      document.getElementById('app-container').style.display = 'none';
+      document.getElementById('loginPassword').value = '';
+    }
+
+    async function checkLoginState() {
+      if (supabaseClient) {
+        supabaseClient.auth.onAuthStateChange((event) => {
+          if (event === 'PASSWORD_RECOVERY') showResetPassword();
+        });
+        const { data } = await supabaseClient.auth.getSession();
+        const session = data ? data.session : null;
+        if (session && session.user) {
+          try {
+            await ensureAppUserForSession(session, '', session.user.email);
+          } catch (e) {
+            console.error(e);
+          }
+          const u = await loadUsernameForSession(session);
+          currentUsername = u || session.user.email;
+          workDataCache = {};
+          workDataCacheKey = null;
+          document.getElementById('login-container').style.display = 'none';
+          document.getElementById('app-container').style.display = 'block';
+          document.getElementById('currentUser').textContent = `用户: ${currentUsername}`;
+          initApp();
+          return;
+        }
+      }
+
+      document.getElementById('login-container').style.display = 'block';
+      document.getElementById('app-container').style.display = 'none';
     }
 
     // --- UI Interaction ---
