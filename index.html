@@ -8,6 +8,7 @@
     body {
       font-family: sans-serif;
       margin: 20px;
+      color: #333333;
     }
 
     button {
@@ -53,6 +54,20 @@
       box-sizing: border-box;
     }
 
+    .break-settings .btn-primary {
+      transition: background-color 0.12s ease, transform 0.08s ease;
+      white-space: nowrap;
+    }
+
+    .break-settings .btn-primary:hover {
+      background-color: #2584e8;
+    }
+
+    .break-settings .btn-primary:active {
+      background-color: #1f78d1;
+      transform: translateY(1px);
+    }
+
     .main-content {
       /* Reverting to simple layout */
     }
@@ -96,7 +111,7 @@
     }
 
     .day.today .date {
-      color: rgb(0, 0, 0);
+      color: #333333;
       font-weight: bold;
     }
 
@@ -207,10 +222,28 @@
     #login-container #login-section .btn-primary:hover {
       background-color: #2584e8;
     }
-    #login-container #login-section .btn-primary:active {
+    #login-container .btn-primary:active {
       background-color: #1f78d1;
       transform: translateY(1px);
     }
+
+    /* Loading spinner styles */
+    .loading-spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid #ffffff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     #app-container .btn-primary {
       background-color: #2B8FFF;
       border: none;
@@ -312,14 +345,17 @@
     <div id="login-section">
       <h2>登录</h2>
       <div class="form-group">
-        <label for="loginEmail" style="text-align: left;">用户名或邮箱</label>
+        <label for="loginEmail" style="display: block; text-align: left; font-size: 14px;">用户名或邮箱</label>
         <input id="loginEmail" type="text" class="form-control" placeholder="请输入用户名或邮箱">
       </div>
       <div class="form-group">
-        <label for="loginPassword" style="text-align: left;">密码</label>
+        <label for="loginPassword" style="display: block; text-align: left; font-size: 14px;">密码</label>
         <input id="loginPassword" type="password" class="form-control" placeholder="请输入密码">
       </div>
-      <button class="btn-primary" onclick="handleLogin()" style="width: 100%;">登录</button>
+      <button id="loginBtn" class="btn-primary" onclick="handleLogin()" style="width: 100%; position: relative;">
+        <span id="loginBtnText">登录</span>
+        <span id="loginSpinner" class="loading-spinner"></span>
+      </button>
       <div style="margin-top: 12px;">
         <button class="btn-outline" onclick="showRegister()" style="width: 100%;">注册新用户</button>
       </div>
@@ -403,6 +439,7 @@
             <span>:</span>
             <select id="dinnerEndMinute" onchange="handleBreakSettingsChange()"></select>
           </div>
+          <button id="saveSettingsBtn" class="btn-outline" onclick="saveSettings()" style="min-width: 100px;">保存设置</button>
         </div>
       </div>
       <div class="header-right">
@@ -599,17 +636,42 @@
     }
 
     function loadBreakSettings() {
-      const raw = localStorage.getItem(getBreakSettingsStorageKey());
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          breakSettings = {
-            lunchStart: sanitizeTimeText(parsed.lunchStart, '12:00'),
-            lunchEnd: sanitizeTimeText(parsed.lunchEnd, '13:00'),
-            dinnerStart: sanitizeTimeText(parsed.dinnerStart, '18:00'),
-            dinnerEnd: sanitizeTimeText(parsed.dinnerEnd, '18:30')
-          };
-        } catch (e) {
+      if (!currentUsername) {
+        // Fallback to default
+        breakSettings = {
+          lunchStart: '12:00',
+          lunchEnd: '13:00',
+          dinnerStart: '18:00',
+          dinnerEnd: '18:30'
+        };
+        syncBreakSettingsToInputs();
+        return;
+      }
+
+      // Try to load from database first
+      if (supabaseClient) {
+        loadBreakSettingsFromDB();
+      } else {
+        // Fallback to localStorage
+        const raw = localStorage.getItem(getBreakSettingsStorageKey());
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            breakSettings = {
+              lunchStart: sanitizeTimeText(parsed.lunchStart, '12:00'),
+              lunchEnd: sanitizeTimeText(parsed.lunchEnd, '13:00'),
+              dinnerStart: sanitizeTimeText(parsed.dinnerStart, '18:00'),
+              dinnerEnd: sanitizeTimeText(parsed.dinnerEnd, '18:30')
+            };
+          } catch (e) {
+            breakSettings = {
+              lunchStart: '12:00',
+              lunchEnd: '13:00',
+              dinnerStart: '18:00',
+              dinnerEnd: '18:30'
+            };
+          }
+        } else {
           breakSettings = {
             lunchStart: '12:00',
             lunchEnd: '13:00',
@@ -617,25 +679,167 @@
             dinnerEnd: '18:30'
           };
         }
-      } else {
-        breakSettings = {
-          lunchStart: '12:00',
-          lunchEnd: '13:00',
-          dinnerStart: '18:00',
-          dinnerEnd: '18:30'
-        };
+        syncBreakSettingsToInputs();
       }
-      syncBreakSettingsToInputs();
     }
 
-    function saveBreakSettings() {
+    async function loadBreakSettingsFromDB() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('user_break_settings')
+          .select('lunch_start, lunch_end, dinner_start, dinner_end')
+          .eq('username', currentUsername)
+          .single();
+
+        if (error || !data) {
+          // No settings found in DB, load from localStorage or use defaults
+          const raw = localStorage.getItem(getBreakSettingsStorageKey());
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              breakSettings = {
+                lunchStart: sanitizeTimeText(parsed.lunchStart, '12:00'),
+                lunchEnd: sanitizeTimeText(parsed.lunchEnd, '13:00'),
+                dinnerStart: sanitizeTimeText(parsed.dinnerStart, '18:00'),
+                dinnerEnd: sanitizeTimeText(parsed.dinnerEnd, '18:30')
+              };
+            } catch (e) {
+              breakSettings = {
+                lunchStart: '12:00',
+                lunchEnd: '13:00',
+                dinnerStart: '18:00',
+                dinnerEnd: '18:30'
+              };
+            }
+          } else {
+            breakSettings = {
+              lunchStart: '12:00',
+              lunchEnd: '13:00',
+              dinnerStart: '18:00',
+              dinnerEnd: '18:30'
+            };
+          }
+        } else {
+          // Settings found in DB
+          breakSettings = {
+            lunchStart: sanitizeTimeText(data.lunch_start, '12:00'),
+            lunchEnd: sanitizeTimeText(data.lunch_end, '13:00'),
+            dinnerStart: sanitizeTimeText(data.dinner_start, '18:00'),
+            dinnerEnd: sanitizeTimeText(data.dinner_end, '18:30')
+          };
+        }
+        syncBreakSettingsToInputs();
+      } catch (e) {
+        console.error('Failed to load break settings:', e);
+        // Fallback to localStorage or defaults
+        const raw = localStorage.getItem(getBreakSettingsStorageKey());
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            breakSettings = {
+              lunchStart: sanitizeTimeText(parsed.lunchStart, '12:00'),
+              lunchEnd: sanitizeTimeText(parsed.lunchEnd, '13:00'),
+              dinnerStart: sanitizeTimeText(parsed.dinnerStart, '18:00'),
+              dinnerEnd: sanitizeTimeText(parsed.dinnerEnd, '18:30')
+            };
+          } catch (e) {
+            breakSettings = {
+              lunchStart: '12:00',
+              lunchEnd: '13:00',
+              dinnerStart: '18:00',
+              dinnerEnd: '18:30'
+            };
+          }
+        }
+        syncBreakSettingsToInputs();
+      }
+    }
+
+    async function saveBreakSettings() {
+      // Save to localStorage as fallback
       localStorage.setItem(getBreakSettingsStorageKey(), JSON.stringify(breakSettings));
+
+      // Also save to database
+      if (!currentUsername || !supabaseClient) return;
+
+      try {
+        const { data: existing } = await supabaseClient
+          .from('user_break_settings')
+          .select('id')
+          .eq('username', currentUsername)
+          .single();
+
+        if (existing) {
+          // Update existing record
+          const { error } = await supabaseClient
+            .from('user_break_settings')
+            .update({
+              lunch_start: breakSettings.lunchStart,
+              lunch_end: breakSettings.lunchEnd,
+              dinner_start: breakSettings.dinnerStart,
+              dinner_end: breakSettings.dinnerEnd,
+              updated_at: new Date().toISOString()
+            })
+            .eq('username', currentUsername);
+
+          if (error) {
+            console.error('Failed to update break settings:', error);
+          }
+        } else {
+          // Insert new record
+          const { error } = await supabaseClient
+            .from('user_break_settings')
+            .insert({
+              username: currentUsername,
+              lunch_start: breakSettings.lunchStart,
+              lunch_end: breakSettings.lunchEnd,
+              dinner_start: breakSettings.dinnerStart,
+              dinner_end: breakSettings.dinnerEnd
+            });
+
+          if (error) {
+            console.error('Failed to insert break settings:', error);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to save break settings:', e);
+      }
     }
 
     function handleBreakSettingsChange() {
       breakSettings = readBreakSettingsFromInputs();
       syncBreakSettingsToInputs();
-      saveBreakSettings();
+      // Don't auto-save, just update local state and re-render
+      render();
+    }
+
+    async function saveSettings() {
+      const btn = document.getElementById('saveSettingsBtn');
+      if (!btn) return;
+
+      // Show saving state
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '保存中...';
+
+      try {
+        breakSettings = readBreakSettingsFromInputs();
+        syncBreakSettingsToInputs();
+        await saveBreakSettings();
+        btn.textContent = '已保存！';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }, 1500);
+      } catch (e) {
+        console.error('Failed to save settings:', e);
+        btn.textContent = '保存失败';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }, 2000);
+      }
+      
       render();
     }
 
@@ -1026,11 +1230,22 @@
         return;
       }
 
+      // Show loading
+      const loginBtn = document.getElementById('loginBtn');
+      const loginBtnText = document.getElementById('loginBtnText');
+      const loginSpinner = document.getElementById('loginSpinner');
+      loginBtn.disabled = true;
+      loginBtnText.style.display = 'none';
+      loginSpinner.style.display = 'block';
+
       let loginEmail = normalizeEmail(account);
       if (!account.includes('@')) {
         const mappedEmail = await loadEmailByUsername(account);
         if (!mappedEmail) {
           errorEl.textContent = '用户名不存在';
+          loginBtn.disabled = false;
+          loginBtnText.style.display = 'inline';
+          loginSpinner.style.display = 'none';
           return;
         }
         loginEmail = mappedEmail;
@@ -1039,6 +1254,9 @@
       const { error } = await supabaseClient.auth.signInWithPassword({ email: loginEmail, password });
       if (error) {
         errorEl.textContent = error.message;
+        loginBtn.disabled = false;
+        loginBtnText.style.display = 'inline';
+        loginSpinner.style.display = 'none';
         return;
       }
 
@@ -1054,6 +1272,12 @@
       currentUsername = u || loginEmail;
       workDataCache = {};
       workDataCacheKey = null;
+      
+      // Hide loading before switching pages
+      loginBtn.disabled = false;
+      loginBtnText.style.display = 'inline';
+      loginSpinner.style.display = 'none';
+      
       document.getElementById('login-container').style.display = 'none';
       document.getElementById('app-container').style.display = 'block';
       document.getElementById('currentUser').textContent = `用户: ${currentUsername}`;
