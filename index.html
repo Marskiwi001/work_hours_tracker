@@ -5,241 +5,496 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Work Hours Tracker</title>
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 20px;
-      color: #333333;
+    :root {
+      --primary-color: #cfea45;
+      --primary-hover: #d7f53e;
+      --primary-active: #c2e226;
+      --success-color: #22c55e;
+      --warning-color: #f59e0b;
+      --danger-color: #ef4444;
+      --text-primary: #333333;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --border-color: #e5e7eb;
+      --bg-primary: #ffffff;
+      --bg-secondary: #f9fafb;
+      --bg-tertiary: #f3f4f6;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
     }
 
-    button {
-      height: 32px;
+    * {
       box-sizing: border-box;
     }
 
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f2f1ef;
+      min-height: 100vh;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
     #app-container {
-      display: none; /* Hidden by default */
+      display: none;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
     }
 
     .header {
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-lg);
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .header h1 {
+      margin: 0 0 16px 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
     }
 
     .header-left {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 10px;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+    }
+
+    #currentUser {
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 14px;
     }
 
     .break-settings {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 16px;
       align-items: center;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
     }
 
     .break-settings .time-pair {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .break-settings .time-pair label {
+      font-weight: 500;
+      color: var(--text-primary);
     }
 
     .break-settings input,
     .break-settings select {
-      height: 32px;
-      box-sizing: border-box;
+      height: 36px;
+      padding: 0 8px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.2s ease;
     }
 
-    .break-settings .btn-primary {
-      transition: background-color 0.12s ease, transform 0.08s ease;
-      white-space: nowrap;
-    }
-
-    .break-settings .btn-primary:hover {
-      background-color: #2584e8;
-    }
-
-    .break-settings .btn-primary:active {
-      background-color: #1f78d1;
-      transform: translateY(1px);
-    }
-
-    .main-content {
-      /* Reverting to simple layout */
+    .break-settings input:focus,
+    .break-settings select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(106, 107, 190, 0.2);
     }
 
     .stats-grid {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
     }
 
     .stat-card {
-      border: 1px solid #ccc;
-      padding: 10px;
-      border-radius: 2px;
+      background: var(--bg-primary);
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      transition: all 0.3s ease;
+      border: 1px solid var(--border-color);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .stat-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+
+    .calendar-card {
+      background: var(--bg-primary);
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      margin-bottom: 24px;
     }
 
     .calendar-controls {
-      margin-bottom: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
     }
 
     .calendar-controls select {
-      height: 32px;
+      height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .calendar-controls select:hover {
+      border-color: var(--primary-color);
+    }
+
+    .calendar-controls select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(106, 107, 190, 0.2);
     }
 
     .calendar-header {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       text-align: center;
-      font-weight: bold;
-      margin-bottom: 5px;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border-color);
     }
 
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 2px;
+      gap: 4px;
     }
 
     .day {
-      border: 1px solid #ddd;
-      padding: 5px;
-      min-height: 60px;
+      border: 1px solid var(--border-color);
+      padding: 8px;
+      min-height: 70px;
       cursor: pointer;
       position: relative;
+      border-radius: var(--radius-sm);
+      background: var(--bg-primary);
+      transition: all 0.2s ease;
+    }
+
+    .day:hover:not(.empty-day) {
+      border-color: var(--primary-color);
+      background: rgba(106, 107, 190, 0.05);
     }
 
     .day.today .date {
-      color: #333333;
-      font-weight: bold;
+      color: var(--primary-color);
+      font-weight: 700;
+      font-size: 16px;
     }
 
     .day.selected {
-      background-color: #f0f0f0;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-active) 100%);
+      color: #ffffff;
+      border-color: transparent;
+    }
+
+    .day.selected .date {
+      color: #ffffff;
+    }
+
+    .day.selected .hours {
+      color: #ffffff;
     }
 
     .empty-day {
-      background: #fafafa;
+      background: var(--bg-tertiary);
       border: none;
+      cursor: default;
+    }
+
+    .date {
+      font-weight: 600;
+      margin-bottom: 4px;
     }
 
     .hours {
-      font-size: 0.8em;
-      margin-top: 5px;
+      font-size: 11px;
+      margin-top: 4px;
+      color: var(--text-secondary);
     }
 
     .dot {
-      width: 6px;
-      height: 6px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       position: absolute;
-      top: 5px;
-      right: 5px;
+      top: 6px;
+      right: 6px;
     }
 
-    .ok { background-color: green; }
-    .single { background-color: orange; }
+    .ok { background-color: var(--success-color); }
+    .single { background-color: var(--warning-color); }
     .none { background-color: transparent; }
 
     .details-card {
-      margin-top: 20px;
-      border-top: 1px solid #ccc;
-      padding-top: 10px;
+      background: var(--bg-primary);
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+    }
+
+    .details-card h3 {
+      margin: 0 0 20px 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 12px;
+    }
+
+    .time-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px 0;
+    }
+
+    .time-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: var(--text-primary);
     }
 
     .modal {
       display: none;
       position: fixed;
       z-index: 1000;
-      left: 0; top: 0; width: 100%; height: 100%;
-      background-color: rgba(0,0,0,0.5);
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
     }
 
     .modal-content {
-      background-color: white;
+      background-color: var(--bg-primary);
       margin: 10% auto;
-      padding: 20px;
-      width: 300px;
-      border-radius: 5px;
+      padding: 32px;
+      width: 400px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modal-content h3 {
+      margin: 0 0 24px 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
     }
 
     .btn-primary {
-      padding: 5px 15px;
-      cursor: pointer;
-      border-radius: 2px;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+      border: none;
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }
+
+    .btn-primary[onclick="clockIn()"] {
+      color: var(--text-primary);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-color) 100%);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
     }
 
     .btn-outline {
-      padding: 5px 15px;
-      cursor: pointer;
-      border-radius: 2px;
-      border: 1px solid rgba(0, 0, 0, 0.3);
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+    }
+
+    .btn-outline:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+      background: rgba(106, 107, 190, 0.1);
     }
 
     .btn-icon {
       width: 32px;
       height: 32px;
-      border-radius: 2px;
-      border: 1px solid rgba(0, 0, 0, 0.3);
+      border-radius: var(--radius-sm);
+      background: var(--danger-color);
+      border: none;
+      color: white;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 0;
-      box-sizing: border-box;
       cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-icon:hover {
+      background: #dc2626;
+      transform: scale(1.05);
+    }
+
+    .btn-icon:active {
+      transform: scale(0.95);
     }
 
     .form-group {
-      margin-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
     }
 
     .form-control {
       width: 100%;
       height: 40px;
-      box-sizing: border-box;
-      border: 1px solid rgba(0, 0, 0, 0.3);
-      border-radius: 2px;
-    }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-      outline: none;
-      border-color: #2B8FFF;
-      border-width: 1px;
-      border-radius: 2px;
-    }
-
-    /* Login Styles - simplified */
-    #login-container {
-      width: 300px;
-      margin: 100px auto;
-      padding: 20px;
-      border: 1px solid #ccc;
-      text-align: center;
-    }
-    #login-container .btn-primary {
-      background-color: #2B8FFF;
-      border: none;
-      color: #fff;
+      padding: 0 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
       font-size: 14px;
-      border-radius: 2px;
-      transition: background-color 0.12s ease, transform 0.08s ease;
-    }
-    #login-container #login-section .btn-primary:hover {
-      background-color: #2584e8;
-    }
-    #login-container .btn-primary:active {
-      background-color: #1f78d1;
-      transform: translateY(1px);
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      transition: all 0.2s ease;
     }
 
-    /* Loading spinner styles */
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(106, 107, 190, 0.2);
+    }
+
+    /* Login Styles */
+    #login-container {
+      width: 400px;
+      margin: 100px auto;
+      padding: 40px;
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+    }
+
+    #login-container h2 {
+      margin: 0 0 24px 0;
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--text-primary);
+    }
+
+    #login-container .form-group label {
+      display: block;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    #login-container .btn-primary {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    #login-container .btn-outline {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+    }
+
+    #login-error, #register-error, #forgot-error, #reset-error {
+      margin-top: 12px;
+      color: var(--danger-color);
+      font-size: 14px;
+    }
+
     .loading-spinner {
       display: none;
       width: 20px;
@@ -256,43 +511,14 @@
       100% { transform: rotate(360deg); }
     }
 
-    #app-container .btn-primary {
-      background-color: #2B8FFF;
-      border: none;
-      color: #fff;
-      font-size: 14px;
-      border-radius: 2px;
-    }
-    #app-container .header-left .btn-primary {
-      transition: background-color 0.12s ease, transform 0.08s ease;
-      font-size: 14px;
-      text-align: center;
-    }
-    #app-container .header-left .btn-primary:hover {
-      background-color: #2584e8;
-    }
-    #app-container .header-left .btn-primary:active {
-      background-color: #1f78d1;
-      transform: translateY(1px);
-    }
-
-    @media (max-width: 480px) {
-      body {
-        margin: 12px;
-      }
-
-      #login-container {
-        width: 100%;
-        max-width: 360px;
-        margin: 48px auto;
+    @media (max-width: 768px) {
+      #app-container {
         padding: 16px;
-        box-sizing: border-box;
       }
 
       .header {
         flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
+        padding: 20px;
       }
 
       .header-left {
@@ -300,7 +526,6 @@
       }
 
       .break-settings {
-        width: 100%;
         flex-direction: column;
         align-items: stretch;
       }
@@ -309,44 +534,30 @@
         justify-content: space-between;
       }
 
-      .break-settings input,
-      .break-settings select {
-        width: 100%;
-      }
-
-      .header-right {
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
       .stats-grid {
-        flex-direction: column;
-        gap: 12px;
+        grid-template-columns: 1fr;
       }
 
-      .calendar-controls select {
-        height: 40px;
-      }
-
-      .calendar-header {
-        font-size: 12px;
+      .calendar-card,
+      .details-card {
+        padding: 16px;
       }
 
       .day {
-        min-height: 52px;
-        padding: 4px;
-      }
-
-      .hours {
-        font-size: 0.7em;
+        min-height: 60px;
+        padding: 6px;
       }
 
       .modal-content {
-        width: calc(100% - 24px);
-        margin: 18% auto;
-        box-sizing: border-box;
+        width: calc(100% - 32px);
+        margin: 20% auto;
+        padding: 24px;
+      }
+
+      #login-container {
+        width: calc(100% - 32px);
+        margin: 40px auto;
+        padding: 32px;
       }
     }
   </style>
@@ -359,11 +570,11 @@
     <div id="login-section">
       <h2>登录</h2>
       <div class="form-group">
-        <label for="loginEmail" style="display: block; text-align: left; font-size: 14px;">用户名或邮箱</label>
+        <label for="loginEmail">用户名或邮箱</label>
         <input id="loginEmail" type="text" class="form-control" placeholder="请输入用户名或邮箱">
       </div>
       <div class="form-group">
-        <label for="loginPassword" style="display: block; text-align: left; font-size: 14px;">密码</label>
+        <label for="loginPassword">密码</label>
         <input id="loginPassword" type="password" class="form-control" placeholder="请输入密码">
       </div>
       <button id="loginBtn" class="btn-primary" onclick="handleLogin()" style="width: 100%; position: relative;">
@@ -382,15 +593,15 @@
     <div id="register-section" style="display: none;">
       <h2>注册</h2>
       <div class="form-group">
-        <label for="registerUsername" style="text-align: left;">用户名</label>
+        <label for="registerUsername">用户名</label>
         <input id="registerUsername" type="text" class="form-control" placeholder="请输入用户名">
       </div>
       <div class="form-group">
-        <label for="registerEmail" style="text-align: left;">邮箱</label>
+        <label for="registerEmail">邮箱</label>
         <input id="registerEmail" type="email" class="form-control" placeholder="请输入邮箱">
       </div>
       <div class="form-group">
-        <label for="registerPassword" style="text-align: left;">密码</label>
+        <label for="registerPassword">密码</label>
         <input id="registerPassword" type="password" class="form-control" placeholder="请输入密码">
       </div>
       <button class="btn-primary" onclick="handleRegister()" style="width: 100%;">注册并发送确认邮件</button>
@@ -403,7 +614,7 @@
     <div id="forgot-section" style="display: none;">
       <h2>找回密码</h2>
       <div class="form-group">
-        <label for="forgotEmail" style="text-align: left;">邮箱</label>
+        <label for="forgotEmail">邮箱</label>
         <input id="forgotEmail" type="email" class="form-control" placeholder="请输入邮箱">
       </div>
       <button id="forgotSendBtn" class="btn-primary" onclick="sendPasswordResetEmail()" style="width: 100%;">发送重置邮件</button>
@@ -416,7 +627,7 @@
     <div id="reset-section" style="display: none;">
       <h2>重置密码</h2>
       <div class="form-group">
-        <label for="resetNewPassword" style="text-align: left;">新密码</label>
+        <label for="resetNewPassword">新密码</label>
         <input id="resetNewPassword" type="password" class="form-control" placeholder="请输入新密码（至少 6 位）">
       </div>
       <button class="btn-primary" onclick="handleUpdatePassword()" style="width: 100%;">更新密码</button>
@@ -453,11 +664,11 @@
             <span>:</span>
             <select id="dinnerEndMinute" onchange="handleBreakSettingsChange()"></select>
           </div>
-          <button id="saveSettingsBtn" class="btn-outline" onclick="saveSettings()" style="min-width: 100px;">保存设置</button>
+          <button id="saveSettingsBtn" class="btn-outline" onclick="saveSettings()">保存设置</button>
         </div>
       </div>
       <div class="header-right">
-        <span id="currentUser" style="font-weight: bold; color: #333;"></span>
+        <span id="currentUser"></span>
         <button class="btn-outline" onclick="handleLogout()">退出</button>
       </div>
     </header>
@@ -506,9 +717,9 @@
           <select id="manualMinute" class="form-control" onchange="handleManualTimeChange()"></select>
         </div>
       </div>
-      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem;">
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;">
         <button class="btn-outline" onclick="hideManualModal()">取消</button>
-        <button class="btn-primary" onclick="manualAdd()" style="border: 1px solid rgba(0, 0, 0, 0.3);">保存记录</button>
+        <button class="btn-primary" onclick="manualAdd()">保存记录</button>
       </div>
     </div>
   </div>
@@ -651,7 +862,6 @@
 
     function loadBreakSettings() {
       if (!currentUsername) {
-        // Fallback to default
         breakSettings = {
           lunchStart: '12:00',
           lunchEnd: '13:00',
@@ -662,11 +872,9 @@
         return;
       }
 
-      // Try to load from database first
       if (supabaseClient) {
         loadBreakSettingsFromDB();
       } else {
-        // Fallback to localStorage
         const raw = localStorage.getItem(getBreakSettingsStorageKey());
         if (raw) {
           try {
@@ -706,7 +914,6 @@
           .single();
 
         if (error || !data) {
-          // No settings found in DB, load from localStorage or use defaults
           const raw = localStorage.getItem(getBreakSettingsStorageKey());
           if (raw) {
             try {
@@ -734,7 +941,6 @@
             };
           }
         } else {
-          // Settings found in DB
           breakSettings = {
             lunchStart: sanitizeTimeText(data.lunch_start, '12:00'),
             lunchEnd: sanitizeTimeText(data.lunch_end, '13:00'),
@@ -745,7 +951,6 @@
         syncBreakSettingsToInputs();
       } catch (e) {
         console.error('Failed to load break settings:', e);
-        // Fallback to localStorage or defaults
         const raw = localStorage.getItem(getBreakSettingsStorageKey());
         if (raw) {
           try {
@@ -770,10 +975,8 @@
     }
 
     async function saveBreakSettings() {
-      // Save to localStorage as fallback
       localStorage.setItem(getBreakSettingsStorageKey(), JSON.stringify(breakSettings));
 
-      // Also save to database
       if (!currentUsername || !supabaseClient) return;
 
       try {
@@ -784,7 +987,6 @@
           .single();
 
         if (existing) {
-          // Update existing record
           const { error } = await supabaseClient
             .from('user_break_settings')
             .update({
@@ -800,7 +1002,6 @@
             console.error('Failed to update break settings:', error);
           }
         } else {
-          // Insert new record
           const { error } = await supabaseClient
             .from('user_break_settings')
             .insert({
@@ -823,7 +1024,6 @@
     function handleBreakSettingsChange() {
       breakSettings = readBreakSettingsFromInputs();
       syncBreakSettingsToInputs();
-      // Don't auto-save, just update local state and re-render
       render();
     }
 
@@ -831,7 +1031,6 @@
       const btn = document.getElementById('saveSettingsBtn');
       if (!btn) return;
 
-      // Show saving state
       const originalText = btn.textContent;
       btn.disabled = true;
       btn.textContent = '保存中...';
@@ -1057,7 +1256,6 @@
         .limit(1);
 
       if (existingError) {
-        // 同步用户档案失败不应影响主登录流程
         console.warn('load app_users failed:', existingError.message || existingError);
         return;
       }
@@ -1073,14 +1271,12 @@
             .update({ username: nextUsername, email: nextEmail })
             .eq('id', row.id);
           if (updateError) {
-            // 同步用户档案失败不应影响主登录流程
             console.warn('update app_users failed:', updateError.message || updateError);
           }
         }
         return;
       }
 
-      // 无记录时不在前端登录流程中强制插入，避免 RLS 拦截登录
       if (!username) return;
     }
 
@@ -1244,7 +1440,6 @@
         return;
       }
 
-      // Show loading
       const loginBtn = document.getElementById('loginBtn');
       const loginBtnText = document.getElementById('loginBtnText');
       const loginSpinner = document.getElementById('loginSpinner');
@@ -1279,7 +1474,6 @@
       try {
         await ensureAppUserForSession(session, account.includes('@') ? '' : account, loginEmail);
       } catch (e) {
-        // 用户档案同步失败不阻断登录
         console.warn('ensure app user failed:', (e && e.message) ? e.message : e);
       }
       const u = await loadUsernameForSession(session);
@@ -1287,7 +1481,6 @@
       workDataCache = {};
       workDataCacheKey = null;
       
-      // Hide loading before switching pages
       loginBtn.disabled = false;
       loginBtnText.style.display = 'inline';
       loginSpinner.style.display = 'none';
@@ -1354,7 +1547,6 @@
       document.getElementById('app-container').style.display = 'none';
     }
 
-    // --- UI Interaction ---
     async function clockIn() {
       await ensureMonthLoaded(selectedYear, selectedMonth);
       const data = getData();
@@ -1465,7 +1657,6 @@
       if (newYear !== selectedYear) {
         selectedYear = newYear;
         updateMonthOptions();
-        // Ensure the selected month is valid for the new year
         selectedMonth = parseInt(document.getElementById('monthSelect').value, 10);
       } else {
         selectedMonth = newMonth;
@@ -1488,7 +1679,6 @@
       document.getElementById('manualModal').style.display = 'none';
     }
 
-    // --- Rendering Logic ---
     async function render() {
       const seq = ++renderSeq;
       await ensureMonthLoaded(selectedYear, selectedMonth);
@@ -1624,12 +1814,9 @@
 
       const ul = document.createElement('ul');
       ul.className = 'time-list';
-      ul.style.listStyle = 'none';
-      ul.style.padding = '0';
-      ul.style.margin = '0';
 
       if (times.length === 0) {
-        ul.innerHTML = '<li class="time-item" style="padding: 8px 0;">暂无打卡记录</li>';
+        ul.innerHTML = '<li class="time-item">暂无打卡记录</li>';
       } else {
         const sorted = (timesRaw || []).slice().sort((a, b) => {
           const ta = (typeof a === 'string') ? a : a.ts;
@@ -1642,10 +1829,6 @@
           const deleteArg = (typeof t === 'string') ? i : `'${t.id}'`;
           const li = document.createElement('li');
           li.className = 'time-item';
-          li.style.display = 'flex';
-          li.style.alignItems = 'center';
-          li.style.gap = '10px';
-          li.style.padding = '8px 0';
           li.innerHTML = `
             <span>${new Date(ts).toLocaleTimeString('zh-CN', { hour12: false })}</span>
             <button class="btn-icon" onclick="deleteTime('${date}', ${deleteArg})" title="删除">
@@ -1664,11 +1847,11 @@
       if (status === 'ok') {
         const detail = calculateDayHoursDetail(times, date);
         summaryDiv.innerHTML = `
-          <div style="font-weight: bold; color: #28a745;">当日总工时: ${detail.netHours.toFixed(2)} 小时</div>
-          <div style="color: #666; margin-top: 4px;">打卡跨度: ${detail.totalHours.toFixed(2)} 小时，休息扣减: ${detail.deductionHours.toFixed(2)} 小时</div>
+          <div style="font-weight: bold; color: var(--success-color);">当日总工时: ${detail.netHours.toFixed(2)} 小时</div>
+          <div style="color: var(--text-secondary); margin-top: 4px;">打卡跨度: ${detail.totalHours.toFixed(2)} 小时，休息扣减: ${detail.deductionHours.toFixed(2)} 小时</div>
         `;
       } else if (status === 'single') {
-        summaryDiv.innerHTML = '<div style="color: #ffc107;">记录不完整，建议补录</div>';
+        summaryDiv.innerHTML = '<div style="color: var(--warning-color);">记录不完整，建议补录</div>';
       }
       timeEntries.appendChild(summaryDiv);
     }
@@ -1726,7 +1909,6 @@
       return 'ok';
     }
 
-    // --- App Initialization ---
     document.addEventListener('DOMContentLoaded', checkLoginState);
 
   </script>
