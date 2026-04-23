@@ -10,6 +10,11 @@
       margin: 20px;
     }
 
+    button {
+      height: 32px;
+      box-sizing: border-box;
+    }
+
     #app-container {
       display: none; /* Hidden by default */
     }
@@ -28,6 +33,26 @@
       gap: 10px;
     }
 
+    .break-settings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .break-settings .time-pair {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .break-settings input,
+    .break-settings select {
+      height: 32px;
+      box-sizing: border-box;
+    }
+
     .main-content {
       /* Reverting to simple layout */
     }
@@ -41,7 +66,7 @@
     .stat-card {
       border: 1px solid #ccc;
       padding: 10px;
-      border-radius: 4px;
+      border-radius: 2px;
     }
 
     .calendar-controls {
@@ -127,11 +152,19 @@
     .btn-primary {
       padding: 5px 15px;
       cursor: pointer;
+      border-radius: 2px;
     }
 
     .btn-outline {
       padding: 5px 15px;
       cursor: pointer;
+      border-radius: 2px;
+      border: 1px solid rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-icon {
+      border-radius: 2px;
+      border: 1px solid rgba(0, 0, 0, 0.3);
     }
 
     .form-group {
@@ -142,6 +175,17 @@
       width: 100%;
       height: 40px;
       box-sizing: border-box;
+      border: 1px solid rgba(0, 0, 0, 0.3);
+      border-radius: 2px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #2B8FFF;
+      border-width: 1px;
+      border-radius: 2px;
     }
 
     /* Login Styles - simplified */
@@ -156,15 +200,33 @@
       background-color: #2B8FFF;
       border: none;
       color: #fff;
-      font-size: 16px;
-      border-radius: 4px;
+      font-size: 14px;
+      border-radius: 2px;
+      transition: background-color 0.12s ease, transform 0.08s ease;
+    }
+    #login-container #login-section .btn-primary:hover {
+      background-color: #2584e8;
+    }
+    #login-container #login-section .btn-primary:active {
+      background-color: #1f78d1;
+      transform: translateY(1px);
     }
     #app-container .btn-primary {
       background-color: #2B8FFF;
       border: none;
       color: #fff;
-      font-size: 16px;
-      border-radius: 4px;
+      font-size: 14px;
+      border-radius: 2px;
+    }
+    #app-container .header-left .btn-primary {
+      transition: background-color 0.12s ease, transform 0.08s ease;
+    }
+    #app-container .header-left .btn-primary:hover {
+      background-color: #2584e8;
+    }
+    #app-container .header-left .btn-primary:active {
+      background-color: #1f78d1;
+      transform: translateY(1px);
     }
 
     @media (max-width: 480px) {
@@ -187,6 +249,21 @@
       }
 
       .header-left {
+        width: 100%;
+      }
+
+      .break-settings {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .break-settings .time-pair {
+        justify-content: space-between;
+      }
+
+      .break-settings input,
+      .break-settings select {
         width: 100%;
       }
 
@@ -276,10 +353,6 @@
     <div id="forgot-section" style="display: none;">
       <h2>找回密码</h2>
       <div class="form-group">
-        <label for="forgotUsername" style="text-align: left;">用户名</label>
-        <input id="forgotUsername" type="text" class="form-control" placeholder="请输入用户名">
-      </div>
-      <div class="form-group">
         <label for="forgotEmail" style="text-align: left;">邮箱</label>
         <input id="forgotEmail" type="email" class="form-control" placeholder="请输入邮箱">
       </div>
@@ -309,6 +382,28 @@
       <div class="header-left">
         <h1>工时记录器</h1>
         <button class="btn-primary" onclick="clockIn()">打卡</button>
+        <div class="break-settings">
+          <div class="time-pair">
+            <label for="lunchStartHour">午休</label>
+            <select id="lunchStartHour" onchange="handleBreakSettingsChange()"></select>
+            <span>:</span>
+            <select id="lunchStartMinute" onchange="handleBreakSettingsChange()"></select>
+            <span>至</span>
+            <select id="lunchEndHour" onchange="handleBreakSettingsChange()"></select>
+            <span>:</span>
+            <select id="lunchEndMinute" onchange="handleBreakSettingsChange()"></select>
+          </div>
+          <div class="time-pair">
+            <label for="dinnerStartHour">晚饭</label>
+            <select id="dinnerStartHour" onchange="handleBreakSettingsChange()"></select>
+            <span>:</span>
+            <select id="dinnerStartMinute" onchange="handleBreakSettingsChange()"></select>
+            <span>至</span>
+            <select id="dinnerEndHour" onchange="handleBreakSettingsChange()"></select>
+            <span>:</span>
+            <select id="dinnerEndMinute" onchange="handleBreakSettingsChange()"></select>
+          </div>
+        </div>
       </div>
       <div class="header-right">
         <span id="currentUser" style="font-weight: bold; color: #333;"></span>
@@ -353,8 +448,12 @@
         <input type="date" id="manualDate" class="form-control">
       </div>
       <div class="form-group">
-        <label for="manualTime">时间</label>
-        <input type="time" id="manualTime" class="form-control">
+        <label for="manualHour">时间</label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <select id="manualHour" class="form-control" onchange="handleManualTimeChange()"></select>
+          <span>:</span>
+          <select id="manualMinute" class="form-control" onchange="handleManualTimeChange()"></select>
+        </div>
       </div>
       <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem;">
         <button class="btn-outline" onclick="hideManualModal()">取消</button>
@@ -374,6 +473,13 @@
     let renderSeq = 0;
     let forgotCooldownTimer = null;
     let forgotCooldownUntil = 0;
+    let isPasswordRecoveryFlow = false;
+    let breakSettings = {
+      lunchStart: '12:00',
+      lunchEnd: '13:00',
+      dinnerStart: '18:00',
+      dinnerEnd: '18:30'
+    };
 
     const SUPABASE_URL = 'https://rmuzdaknrjrhettqnfai.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_tUx4wW7WU78eVtPCm2cS0w_PkFxEk9x';
@@ -400,6 +506,143 @@
 
     function normalizeEmail(value) {
       return String(value || '').trim().toLowerCase();
+    }
+
+    function getBreakSettingsStorageKey() {
+      return currentUsername ? `breakSettings_${currentUsername}` : 'breakSettings_default';
+    }
+
+    function sanitizeTimeText(value, fallbackValue) {
+      const t = String(value || '').trim();
+      return /^\d{2}:\d{2}$/.test(t) ? t : fallbackValue;
+    }
+
+    function ensureTimeSelectOptions(hourId, minuteId) {
+      const hourEl = document.getElementById(hourId);
+      const minuteEl = document.getElementById(minuteId);
+      if (!hourEl || !minuteEl) return;
+      if (hourEl.options.length === 24 && minuteEl.options.length === 60) return;
+
+      hourEl.innerHTML = '';
+      for (let h = 0; h < 24; h++) {
+        const opt = document.createElement('option');
+        opt.value = String(h).padStart(2, '0');
+        opt.textContent = String(h).padStart(2, '0');
+        hourEl.appendChild(opt);
+      }
+
+      minuteEl.innerHTML = '';
+      for (let m = 0; m < 60; m++) {
+        const opt = document.createElement('option');
+        opt.value = String(m).padStart(2, '0');
+        opt.textContent = String(m).padStart(2, '0');
+        minuteEl.appendChild(opt);
+      }
+    }
+
+    function ensureAllTimeSelectOptions() {
+      ensureTimeSelectOptions('lunchStartHour', 'lunchStartMinute');
+      ensureTimeSelectOptions('lunchEndHour', 'lunchEndMinute');
+      ensureTimeSelectOptions('dinnerStartHour', 'dinnerStartMinute');
+      ensureTimeSelectOptions('dinnerEndHour', 'dinnerEndMinute');
+    }
+
+    function ensureManualTimeOptions() {
+      ensureTimeSelectOptions('manualHour', 'manualMinute');
+    }
+
+    function getTimeFromSelect(hourId, minuteId, fallbackValue) {
+      const fallback = sanitizeTimeText(fallbackValue, '00:00');
+      const fallbackHour = fallback.slice(0, 2);
+      const fallbackMinute = fallback.slice(3, 5);
+      const hourEl = document.getElementById(hourId);
+      const minuteEl = document.getElementById(minuteId);
+      const hh = hourEl ? String(hourEl.value || fallbackHour).padStart(2, '0') : fallbackHour;
+      const mm = minuteEl ? String(minuteEl.value || fallbackMinute).padStart(2, '0') : fallbackMinute;
+      return sanitizeTimeText(`${hh}:${mm}`, fallback);
+    }
+
+    function setTimeToSelect(hourId, minuteId, timeText) {
+      const safeText = sanitizeTimeText(timeText, '00:00');
+      const hh = safeText.slice(0, 2);
+      const mm = safeText.slice(3, 5);
+      const hourEl = document.getElementById(hourId);
+      const minuteEl = document.getElementById(minuteId);
+      if (hourEl) hourEl.value = hh;
+      if (minuteEl) minuteEl.value = mm;
+    }
+
+    function getManualTimeText() {
+      return getTimeFromSelect('manualHour', 'manualMinute', '09:00');
+    }
+
+    function handleManualTimeChange() {
+      const t = getManualTimeText();
+      setTimeToSelect('manualHour', 'manualMinute', t);
+    }
+
+    function readBreakSettingsFromInputs() {
+      return {
+        lunchStart: getTimeFromSelect('lunchStartHour', 'lunchStartMinute', '12:00'),
+        lunchEnd: getTimeFromSelect('lunchEndHour', 'lunchEndMinute', '13:00'),
+        dinnerStart: getTimeFromSelect('dinnerStartHour', 'dinnerStartMinute', '18:00'),
+        dinnerEnd: getTimeFromSelect('dinnerEndHour', 'dinnerEndMinute', '18:30')
+      };
+    }
+
+    function syncBreakSettingsToInputs() {
+      ensureAllTimeSelectOptions();
+      setTimeToSelect('lunchStartHour', 'lunchStartMinute', breakSettings.lunchStart);
+      setTimeToSelect('lunchEndHour', 'lunchEndMinute', breakSettings.lunchEnd);
+      setTimeToSelect('dinnerStartHour', 'dinnerStartMinute', breakSettings.dinnerStart);
+      setTimeToSelect('dinnerEndHour', 'dinnerEndMinute', breakSettings.dinnerEnd);
+    }
+
+    function loadBreakSettings() {
+      const raw = localStorage.getItem(getBreakSettingsStorageKey());
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          breakSettings = {
+            lunchStart: sanitizeTimeText(parsed.lunchStart, '12:00'),
+            lunchEnd: sanitizeTimeText(parsed.lunchEnd, '13:00'),
+            dinnerStart: sanitizeTimeText(parsed.dinnerStart, '18:00'),
+            dinnerEnd: sanitizeTimeText(parsed.dinnerEnd, '18:30')
+          };
+        } catch (e) {
+          breakSettings = {
+            lunchStart: '12:00',
+            lunchEnd: '13:00',
+            dinnerStart: '18:00',
+            dinnerEnd: '18:30'
+          };
+        }
+      } else {
+        breakSettings = {
+          lunchStart: '12:00',
+          lunchEnd: '13:00',
+          dinnerStart: '18:00',
+          dinnerEnd: '18:30'
+        };
+      }
+      syncBreakSettingsToInputs();
+    }
+
+    function saveBreakSettings() {
+      localStorage.setItem(getBreakSettingsStorageKey(), JSON.stringify(breakSettings));
+    }
+
+    function handleBreakSettingsChange() {
+      breakSettings = readBreakSettingsFromInputs();
+      syncBreakSettingsToInputs();
+      saveBreakSettings();
+      render();
+    }
+
+    function isRecoveryFlowFromUrl() {
+      const hash = (window.location.hash || '').toLowerCase();
+      const search = (window.location.search || '').toLowerCase();
+      return hash.includes('type=recovery') || search.includes('type=recovery');
     }
 
     function setForgotButtonState(disabled, text) {
@@ -541,7 +784,6 @@
       document.getElementById('register-error').textContent = '';
       document.getElementById('forgot-error').textContent = '';
       document.getElementById('reset-error').textContent = '';
-      document.getElementById('forgotUsername').value = '';
       document.getElementById('forgotEmail').value = '';
       if (Date.now() >= forgotCooldownUntil) {
         setForgotButtonState(false, '发送重置邮件');
@@ -625,6 +867,9 @@
     }
 
     function showResetPassword() {
+      isPasswordRecoveryFlow = true;
+      document.getElementById('app-container').style.display = 'none';
+      document.getElementById('login-container').style.display = 'block';
       document.getElementById('login-section').style.display = 'none';
       document.getElementById('register-section').style.display = 'none';
       document.getElementById('forgot-section').style.display = 'none';
@@ -637,6 +882,7 @@
     }
 
     function hideResetPassword() {
+      isPasswordRecoveryFlow = false;
       document.getElementById('reset-section').style.display = 'none';
       document.getElementById('register-section').style.display = 'none';
       document.getElementById('forgot-section').style.display = 'none';
@@ -709,24 +955,9 @@
         return;
       }
 
-      const username = document.getElementById('forgotUsername').value.trim();
       const email = normalizeEmail(document.getElementById('forgotEmail').value);
-      if (!username) {
-        errorEl.textContent = '请输入用户名';
-        return;
-      }
       if (!email) {
         errorEl.textContent = '请输入邮箱';
-        return;
-      }
-
-      const boundEmail = await loadEmailByUsername(username);
-      if (!boundEmail) {
-        errorEl.textContent = '用户名不存在';
-        return;
-      }
-      if (boundEmail !== email) {
-        errorEl.textContent = '用户名与邮箱不匹配';
         return;
       }
 
@@ -833,6 +1064,12 @@
       currentUsername = null;
       workDataCache = {};
       workDataCacheKey = null;
+      breakSettings = {
+        lunchStart: '12:00',
+        lunchEnd: '13:00',
+        dinnerStart: '18:00',
+        dinnerEnd: '18:30'
+      };
 
       if (supabaseClient) {
         await supabaseClient.auth.signOut();
@@ -846,10 +1083,17 @@
     async function checkLoginState() {
       if (supabaseClient) {
         supabaseClient.auth.onAuthStateChange((event) => {
-          if (event === 'PASSWORD_RECOVERY') showResetPassword();
+          if (event === 'PASSWORD_RECOVERY') {
+            isPasswordRecoveryFlow = true;
+            showResetPassword();
+          }
         });
         const { data } = await supabaseClient.auth.getSession();
         const session = data ? data.session : null;
+        if (isPasswordRecoveryFlow || isRecoveryFlowFromUrl()) {
+          showResetPassword();
+          return;
+        }
         if (session && session.user) {
           try {
             await ensureAppUserForSession(session, '', session.user.email);
@@ -905,7 +1149,7 @@
 
     async function manualAdd() {
       const date = document.getElementById('manualDate').value;
-      const time = document.getElementById('manualTime').value;
+      const time = getManualTimeText();
       if (!date || !time) return alert('请选择日期和时间');
 
       await ensureMonthLoaded(selectedYear, selectedMonth);
@@ -996,7 +1240,11 @@
     }
 
     function showManualModal() {
+      ensureManualTimeOptions();
       document.getElementById('manualDate').value = currentSelectedDate;
+      const now = new Date();
+      const defaultTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      setTimeToSelect('manualHour', 'manualMinute', defaultTime);
       document.getElementById('manualModal').style.display = 'block';
     }
 
@@ -1014,6 +1262,8 @@
     }
 
     function initApp() {
+      ensureAllTimeSelectOptions();
+      loadBreakSettings();
       initSelectors();
       render();
     }
@@ -1092,7 +1342,7 @@
         const timesRaw = data[dateStr] || [];
         const times = normalizeTimes(timesRaw);
         const status = getStatus(times);
-        const hours = calculateHours(times);
+        const hours = calculateHours(times, dateStr);
 
         if (status === 'ok') {
           totalMonthHours += hours;
@@ -1154,7 +1404,7 @@
           const li = document.createElement('li');
           li.className = 'time-item';
           li.innerHTML = `
-            <span>${new Date(ts).toLocaleTimeString()}</span>
+            <span>${new Date(ts).toLocaleTimeString('zh-CN', { hour12: false })}</span>
             <button class="btn-icon" onclick="deleteTime('${date}', ${deleteArg})" title="删除">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
                 <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
@@ -1169,17 +1419,62 @@
 
       const summaryDiv = document.createElement('div');
       if (status === 'ok') {
-        summaryDiv.innerHTML = `<div style="font-weight: bold; color: #28a745;">当日总工时: ${calculateHours(times).toFixed(2)} 小时</div>`;
+        const detail = calculateDayHoursDetail(times, date);
+        summaryDiv.innerHTML = `
+          <div style="font-weight: bold; color: #28a745;">当日总工时: ${detail.netHours.toFixed(2)} 小时</div>
+          <div style="color: #666; margin-top: 4px;">打卡跨度: ${detail.totalHours.toFixed(2)} 小时，休息扣减: ${detail.deductionHours.toFixed(2)} 小时</div>
+        `;
       } else if (status === 'single') {
         summaryDiv.innerHTML = '<div style="color: #ffc107;">记录不完整，建议补录</div>';
       }
       timeEntries.appendChild(summaryDiv);
     }
 
-    function calculateHours(times) {
-      if (times.length < 2) return 0;
+    function timeTextToMinutes(text) {
+      if (!/^\d{2}:\d{2}$/.test(text)) return null;
+      const [hh, mm] = text.split(':').map((x) => Number.parseInt(x, 10));
+      if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
+      if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+      return hh * 60 + mm;
+    }
+
+    function calculateSingleBreakHours(dateKey, startText, endText, firstTs, lastTs) {
+      const startMinutes = timeTextToMinutes(startText);
+      const endMinutes = timeTextToMinutes(endText);
+      if (startMinutes === null || endMinutes === null || endMinutes <= startMinutes) return 0;
+
+      const startDate = new Date(`${dateKey}T00:00:00`);
+      const breakStartTs = new Date(startDate.getTime() + startMinutes * 60 * 1000);
+      const breakEndTs = new Date(startDate.getTime() + endMinutes * 60 * 1000);
+
+      const overlapStartMs = Math.max(firstTs.getTime(), breakStartTs.getTime());
+      const overlapEndMs = Math.min(lastTs.getTime(), breakEndTs.getTime());
+      if (overlapEndMs <= overlapStartMs) return 0;
+      return (overlapEndMs - overlapStartMs) / (1000 * 60 * 60);
+    }
+
+    function calculateBreakDeductionHours(dateKey, firstTs, lastTs) {
+      const lunchHours = calculateSingleBreakHours(dateKey, breakSettings.lunchStart, breakSettings.lunchEnd, firstTs, lastTs);
+      const dinnerHours = calculateSingleBreakHours(dateKey, breakSettings.dinnerStart, breakSettings.dinnerEnd, firstTs, lastTs);
+      return lunchHours + dinnerHours;
+    }
+
+    function calculateDayHoursDetail(times, dateKey) {
+      if (times.length < 2) {
+        return { totalHours: 0, deductionHours: 0, netHours: 0 };
+      }
       const sorted = times.map(t => new Date(t)).sort((a, b) => a - b);
-      return (sorted[sorted.length - 1] - sorted[0]) / (1000 * 60 * 60);
+      const totalHours = (sorted[sorted.length - 1] - sorted[0]) / (1000 * 60 * 60);
+      const firstTs = sorted[0];
+      const lastTs = sorted[sorted.length - 1];
+      const dayKey = dateKey || formatDateLocal(firstTs);
+      const deductionHours = calculateBreakDeductionHours(dayKey, firstTs, lastTs);
+      const netHours = Math.max(0, totalHours - deductionHours);
+      return { totalHours, deductionHours, netHours };
+    }
+
+    function calculateHours(times, dateKey) {
+      return calculateDayHoursDetail(times, dateKey).netHours;
     }
 
     function getStatus(times) {
