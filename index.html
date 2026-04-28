@@ -9,7 +9,7 @@
       --primary-color: #cfea45;
       --primary-hover: #d7f53e;
       --primary-active: #c2e226;
-      --success-color: #22c55e;
+      --success-color: #4fbdf0;
       --warning-color: #f59e0b;
       --danger-color: #ef4444;
       --text-primary: #333333;
@@ -20,8 +20,8 @@
       --bg-secondary: #f9fafb;
       --bg-tertiary: #f3f4f6;
       --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
       --radius-sm: 6px;
       --radius-md: 8px;
       --radius-lg: 12px;
@@ -81,15 +81,24 @@
       align-items: flex-start;
       gap: 16px;
       flex: 1;
+      min-width: 0;
+    }
+
+    .clockin-user-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
     }
 
     .header-right {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 8px 16px;
-      background: var(--bg-secondary);
-      border-radius: var(--radius-md);
+      padding: 0;
+      background: transparent;
+      border-radius: 0;
+      margin-left: auto;
     }
 
     #currentUser {
@@ -99,26 +108,41 @@
     }
 
     .break-settings {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
       gap: 16px;
-      align-items: center;
+      align-items: end;
       padding: 16px;
       background: var(--bg-secondary);
       border-radius: var(--radius-md);
+      width: 100%;
+      box-sizing: border-box;
+      max-width: 100%;
     }
 
     .break-settings .time-pair {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       font-size: 14px;
       color: var(--text-secondary);
+      min-width: 0;
+      flex: 1;
+    }
+
+    .break-settings .time-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
     }
 
     .break-settings .time-pair label {
       font-weight: 500;
       color: var(--text-primary);
+      min-width: 40px;
     }
 
     .break-settings input,
@@ -131,6 +155,12 @@
       color: var(--text-primary);
       font-size: 14px;
       transition: all 0.2s ease;
+      min-width: 0;
+    }
+
+    .break-settings select {
+      flex: 1;
+      min-width: 0;
     }
 
     .break-settings input:focus,
@@ -138,6 +168,19 @@
       outline: none;
       border-color: var(--primary-color);
       box-shadow: 0 0 0 3px rgba(106, 107, 190, 0.2);
+    }
+
+    .break-settings .time-pair span {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    #saveSettingsBtn {
+      height: 36px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .stats-grid {
@@ -357,17 +400,20 @@
       color: var(--text-primary);
     }
 
+    /* ============================================
+       Button Styles - Global & Reusable
+       ============================================ */
+    
+    /* Primary Button - Green/Colored with dark text */
     .btn-primary {
       background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
       border: none;
-      color: #ffffff;
+      color: var(--text-primary);
       padding: 10px 20px;
       border-radius: var(--radius-sm);
       font-weight: 600;
-    }
-
-    .btn-primary[onclick="clockIn()"] {
-      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
 
     .btn-primary:hover {
@@ -380,6 +426,7 @@
       transform: translateY(0);
     }
 
+    /* Outline Button - White/Light with border */
     .btn-outline {
       background: var(--bg-primary);
       border: 1px solid var(--border-color);
@@ -387,14 +434,21 @@
       padding: 10px 20px;
       border-radius: var(--radius-sm);
       font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
 
     .btn-outline:hover {
-      border-color: var(--primary-color);
-      color: var(--primary-color);
+      border-color: var(--border-color);
+      color: var(--text-primary);
       background: rgba(106, 107, 190, 0.1);
     }
 
+    .btn-outline:active {
+      transform: translateY(0);
+    }
+
+    /* Icon Button - Red delete button */
     .btn-icon {
       width: 32px;
       height: 32px;
@@ -417,6 +471,41 @@
 
     .btn-icon:active {
       transform: scale(0.95);
+    }
+
+    /* Settings Icon Button */
+    .btn-icon-settings {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .btn-icon-settings:hover {
+      border-color: var(--border-color);
+      color: var(--text-primary);
+      background: rgba(106, 107, 190, 0.1);
+      transform: translateY(01px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-icon-settings:active {
+      transform: translateY(0);
+    }
+
+    .btn-icon-settings.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color:var(--text-primary)e;
     }
 
     .form-group {
@@ -449,7 +538,7 @@
       box-shadow: 0 0 0 3px rgba(106, 107, 190, 0.2);
     }
 
-    /* Login Styles */
+    /* Login Container Specific Styles */
     #login-container {
       width: 400px;
       margin: 100px auto;
@@ -476,13 +565,7 @@
       color: var(--text-primary);
     }
 
-    #login-container .btn-primary {
-      width: 100%;
-      padding: 12px;
-      font-size: 14px;
-      color: var(--text-primary);
-    }
-
+    #login-container .btn-primary,
     #login-container .btn-outline {
       width: 100%;
       padding: 12px;
@@ -511,6 +594,25 @@
       100% { transform: rotate(360deg); }
     }
 
+    /* Tablet responsive */
+    @media (max-width: 1024px) {
+      .break-settings {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        width: 100%;
+      }
+
+      #saveSettingsBtn {
+        grid-column: 1 / -1;
+        width: 100%;
+      }
+
+      .break-settings select {
+        min-width: 45px;
+        max-width: 60px;
+      }
+    }
+
     @media (max-width: 768px) {
       #app-container {
         padding: 16px;
@@ -525,13 +627,64 @@
         width: 100%;
       }
 
+      .clockin-user-row {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .clockin-user-row .btn-primary {
+        flex: 0 0 auto;
+      }
+
+      .btn-icon-settings {
+        width: 38px;
+        height: 38px;
+      }
+
+      .header-right {
+        margin-left: 0;
+        flex: 1;
+        justify-content: flex-end;
+      }
+
       .break-settings {
-        flex-direction: column;
-        align-items: stretch;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 12px;
+        width: 100%;
       }
 
       .break-settings .time-pair {
-        justify-content: space-between;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 6px;
+        width: 100%;
+      }
+
+      .break-settings .time-pair label {
+        min-width: 100%;
+        margin-bottom: 4px;
+        font-size: 13px;
+      }
+
+      .break-settings select {
+        flex: 1;
+        min-width: 0;
+        max-width: none;
+        height: 34px;
+        font-size: 13px;
+      }
+
+      .break-settings .time-pair span {
+        flex: 0 0 auto;
+        font-size: 13px;
+      }
+
+      #saveSettingsBtn {
+        width: 100%;
+        margin-top: 8px;
       }
 
       .stats-grid {
@@ -559,6 +712,56 @@
         margin: 40px auto;
         padding: 32px;
       }
+    }
+
+    /* Extra small screens - Ultra compact layout */
+    @media (max-width: 380px) {
+      .break-settings .time-pair {
+        display: block;
+      }
+
+      .break-settings .time-pair label {
+        display: block;
+        width: 100%;
+        margin-bottom: 6px;
+        font-size: 12px;
+      }
+
+      .break-settings .time-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        margin-bottom: 6px;
+      }
+
+      .break-settings .time-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .break-settings .time-row select {
+        flex: 1;
+        min-width: 0;
+        height: 34px;
+        font-size: 12px;
+      }
+
+      .break-settings .time-row span {
+        font-size: 12px;
+        flex: 0 0 auto;
+      }
+
+      .break-settings {
+        padding: 10px;
+        gap: 10px;
+      }
+    }
+
+    /* Responsive time selects for all screen sizes */
+    .break-settings .time-pair select {
+      flex: 1;
+      min-width: 0;
+      max-width: none;
     }
   </style>
 
@@ -642,34 +845,50 @@
     <header class="header">
       <div class="header-left">
         <h1>工时记录器</h1>
-        <button class="btn-primary" onclick="clockIn()">打卡</button>
-        <div class="break-settings">
+        <div class="clockin-user-row">
+          <button class="btn-primary" onclick="clockIn()">打卡</button>
+          <button class="btn-icon-settings" onclick="toggleBreakSettings()" title="休息设置">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+              <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.421 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.421-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.116l.094-.318z"/>
+            </svg>
+          </button>
+          <div class="header-right">
+            <span id="currentUser"></span>
+            <button class="btn-outline" onclick="handleLogout()">退出</button>
+          </div>
+        </div>
+        <div class="break-settings" id="breakSettingsPanel" style="display: none;">
           <div class="time-pair">
             <label for="lunchStartHour">午休</label>
-            <select id="lunchStartHour" onchange="handleBreakSettingsChange()"></select>
-            <span>:</span>
-            <select id="lunchStartMinute" onchange="handleBreakSettingsChange()"></select>
-            <span>至</span>
-            <select id="lunchEndHour" onchange="handleBreakSettingsChange()"></select>
-            <span>:</span>
-            <select id="lunchEndMinute" onchange="handleBreakSettingsChange()"></select>
+            <div class="time-row">
+              <select id="lunchStartHour" onchange="handleBreakSettingsChange()"></select>
+              <span>:</span>
+              <select id="lunchStartMinute" onchange="handleBreakSettingsChange()"></select>
+              <span>至</span>
+            </div>
+            <div class="time-row">
+              <select id="lunchEndHour" onchange="handleBreakSettingsChange()"></select>
+              <span>:</span>
+              <select id="lunchEndMinute" onchange="handleBreakSettingsChange()"></select>
+            </div>
           </div>
           <div class="time-pair">
             <label for="dinnerStartHour">晚饭</label>
-            <select id="dinnerStartHour" onchange="handleBreakSettingsChange()"></select>
-            <span>:</span>
-            <select id="dinnerStartMinute" onchange="handleBreakSettingsChange()"></select>
-            <span>至</span>
-            <select id="dinnerEndHour" onchange="handleBreakSettingsChange()"></select>
-            <span>:</span>
-            <select id="dinnerEndMinute" onchange="handleBreakSettingsChange()"></select>
+            <div class="time-row">
+              <select id="dinnerStartHour" onchange="handleBreakSettingsChange()"></select>
+              <span>:</span>
+              <select id="dinnerStartMinute" onchange="handleBreakSettingsChange()"></select>
+              <span>至</span>
+            </div>
+            <div class="time-row">
+              <select id="dinnerEndHour" onchange="handleBreakSettingsChange()"></select>
+              <span>:</span>
+              <select id="dinnerEndMinute" onchange="handleBreakSettingsChange()"></select>
+            </div>
           </div>
           <button id="saveSettingsBtn" class="btn-outline" onclick="saveSettings()">保存设置</button>
         </div>
-      </div>
-      <div class="header-right">
-        <span id="currentUser"></span>
-        <button class="btn-outline" onclick="handleLogout()">退出</button>
       </div>
     </header>
 
@@ -1448,18 +1667,29 @@
       loginSpinner.style.display = 'block';
 
       let loginEmail = normalizeEmail(account);
+      
+      // OPTIMIZATION 1: Check localStorage cache first before database query
       if (!account.includes('@')) {
-        const mappedEmail = await loadEmailByUsername(account);
-        if (!mappedEmail) {
-          errorEl.textContent = '用户名不存在';
-          loginBtn.disabled = false;
-          loginBtnText.style.display = 'inline';
-          loginSpinner.style.display = 'none';
-          return;
+        const cachedEmail = localStorage.getItem('username_email_' + account.toLowerCase());
+        if (cachedEmail) {
+          loginEmail = normalizeEmail(cachedEmail);
+        } else {
+          // Only query database if not in cache
+          const mappedEmail = await loadEmailByUsername(account);
+          if (!mappedEmail) {
+            errorEl.textContent = '用户名不存在';
+            loginBtn.disabled = false;
+            loginBtnText.style.display = 'inline';
+            loginSpinner.style.display = 'none';
+            return;
+          }
+          loginEmail = mappedEmail;
+          // Cache the result for future logins
+          localStorage.setItem('username_email_' + account.toLowerCase(), loginEmail);
         }
-        loginEmail = mappedEmail;
       }
 
+      // OPTIMIZATION 2: Authenticate first (most important step)
       const { error } = await supabaseClient.auth.signInWithPassword({ email: loginEmail, password });
       if (error) {
         errorEl.textContent = error.message;
@@ -1469,18 +1699,20 @@
         return;
       }
 
+      // OPTIMIZATION 3: Get session and switch to app immediately
       const { data } = await supabaseClient.auth.getSession();
       const session = data ? data.session : null;
-      try {
-        await ensureAppUserForSession(session, account.includes('@') ? '' : account, loginEmail);
-      } catch (e) {
-        console.warn('ensure app user failed:', (e && e.message) ? e.message : e);
-      }
-      const u = await loadUsernameForSession(session);
-      currentUsername = u || loginEmail;
+      
+      // Get username from session metadata first (fast, no network request)
+      const metadataUsername = session && session.user && session.user.user_metadata && session.user.user_metadata.username
+        ? String(session.user.user_metadata.username).trim()
+        : '';
+      
+      currentUsername = metadataUsername || loginEmail;
       workDataCache = {};
       workDataCacheKey = null;
       
+      // Hide loading and show app immediately
       loginBtn.disabled = false;
       loginBtnText.style.display = 'inline';
       loginSpinner.style.display = 'none';
@@ -1489,6 +1721,30 @@
       document.getElementById('app-container').style.display = 'block';
       document.getElementById('currentUser').textContent = `用户: ${currentUsername}`;
       initApp();
+      
+      // OPTIMIZATION 4: Defer non-critical database operations
+      // These run in background after app is visible
+      setTimeout(async () => {
+        try {
+          // Update app user record (not critical for login)
+          await ensureAppUserForSession(session, account.includes('@') ? '' : account, loginEmail);
+        } catch (e) {
+          console.warn('ensure app user failed:', (e && e.message) ? e.message : e);
+        }
+        
+        try {
+          // Load accurate username from database (background update)
+          const dbUsername = await loadUsernameForSession(session);
+          if (dbUsername && dbUsername !== currentUsername) {
+            currentUsername = dbUsername;
+            document.getElementById('currentUser').textContent = `用户: ${currentUsername}`;
+            // Reload break settings with correct username
+            loadBreakSettings();
+          }
+        } catch (e) {
+          console.warn('load username failed:', (e && e.message) ? e.message : e);
+        }
+      }, 100);
     }
 
     async function handleLogout() {
@@ -1685,6 +1941,19 @@
       if (seq !== renderSeq) return;
       renderCalendar();
       renderDayDetails(currentSelectedDate);
+    }
+
+    function toggleBreakSettings() {
+      const panel = document.getElementById('breakSettingsPanel');
+      const btn = document.querySelector('.btn-icon-settings');
+      
+      if (panel.style.display === 'none' || panel.style.display === '') {
+        panel.style.display = 'block';
+        btn.classList.add('active');
+      } else {
+        panel.style.display = 'none';
+        btn.classList.remove('active');
+      }
     }
 
     function initApp() {
