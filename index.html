@@ -955,12 +955,6 @@
     let forgotCooldownTimer = null;
     let forgotCooldownUntil = 0;
     let isPasswordRecoveryFlow = false;
-    let breakSettings = {
-      lunchStart: '12:00',
-      lunchEnd: '13:00',
-      dinnerStart: '18:00',
-      dinnerEnd: '18:30'
-    };
 
     const SUPABASE_URL = 'https://rmuzdaknrjrhettqnfai.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_tUx4wW7WU78eVtPCm2cS0w_PkFxEk9x';
@@ -1071,60 +1065,31 @@
       };
     }
 
-    function syncBreakSettingsToInputs() {
+    function syncBreakSettingsToInputs(settings) {
       ensureAllTimeSelectOptions();
-      setTimeToSelect('lunchStartHour', 'lunchStartMinute', breakSettings.lunchStart);
-      setTimeToSelect('lunchEndHour', 'lunchEndMinute', breakSettings.lunchEnd);
-      setTimeToSelect('dinnerStartHour', 'dinnerStartMinute', breakSettings.dinnerStart);
-      setTimeToSelect('dinnerEndHour', 'dinnerEndMinute', breakSettings.dinnerEnd);
+      setTimeToSelect('lunchStartHour', 'lunchStartMinute', settings.lunchStart);
+      setTimeToSelect('lunchEndHour', 'lunchEndMinute', settings.lunchEnd);
+      setTimeToSelect('dinnerStartHour', 'dinnerStartMinute', settings.dinnerStart);
+      setTimeToSelect('dinnerEndHour', 'dinnerEndMinute', settings.dinnerEnd);
     }
 
-    function loadBreakSettings() {
-      if (!currentUsername) {
-        breakSettings = {
-          lunchStart: '12:00',
-          lunchEnd: '13:00',
-          dinnerStart: '18:00',
-          dinnerEnd: '18:30'
+    async function loadBreakSettingsFromLocalStorage(defaultSettings) {
+      const raw = localStorage.getItem(getBreakSettingsStorageKey());
+      if (!raw) return defaultSettings;
+      try {
+        const parsed = JSON.parse(raw);
+        return {
+          lunchStart: sanitizeTimeText(parsed.lunchStart, defaultSettings.lunchStart),
+          lunchEnd: sanitizeTimeText(parsed.lunchEnd, defaultSettings.lunchEnd),
+          dinnerStart: sanitizeTimeText(parsed.dinnerStart, defaultSettings.dinnerStart),
+          dinnerEnd: sanitizeTimeText(parsed.dinnerEnd, defaultSettings.dinnerEnd),
         };
-        syncBreakSettingsToInputs();
-        return;
-      }
-
-      if (supabaseClient) {
-        loadBreakSettingsFromDB();
-      } else {
-        const raw = localStorage.getItem(getBreakSettingsStorageKey());
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw);
-            breakSettings = {
-              lunchStart: sanitizeTimeText(parsed.lunchStart, '12:00'),
-              lunchEnd: sanitizeTimeText(parsed.lunchEnd, '13:00'),
-              dinnerStart: sanitizeTimeText(parsed.dinnerStart, '18:00'),
-              dinnerEnd: sanitizeTimeText(parsed.dinnerEnd, '18:30')
-            };
-          } catch (e) {
-            breakSettings = {
-              lunchStart: '12:00',
-              lunchEnd: '13:00',
-              dinnerStart: '18:00',
-              dinnerEnd: '18:30'
-            };
-          }
-        } else {
-          breakSettings = {
-            lunchStart: '12:00',
-            lunchEnd: '13:00',
-            dinnerStart: '18:00',
-            dinnerEnd: '18:30'
-          };
-        }
-        syncBreakSettingsToInputs();
+      } catch (e) {
+        return defaultSettings;
       }
     }
 
-    async function loadBreakSettingsFromDB() {
+    async function loadBreakSettingsFromDB(defaultSettings) {
       try {
         const { data, error } = await supabaseClient
           .from('user_break_settings')
@@ -1133,67 +1098,33 @@
           .single();
 
         if (error || !data) {
-          const raw = localStorage.getItem(getBreakSettingsStorageKey());
-          if (raw) {
-            try {
-              const parsed = JSON.parse(raw);
-              breakSettings = {
-                lunchStart: sanitizeTimeText(parsed.lunchStart, '12:00'),
-                lunchEnd: sanitizeTimeText(parsed.lunchEnd, '13:00'),
-                dinnerStart: sanitizeTimeText(parsed.dinnerStart, '18:00'),
-                dinnerEnd: sanitizeTimeText(parsed.dinnerEnd, '18:30')
-              };
-            } catch (e) {
-              breakSettings = {
-                lunchStart: '12:00',
-                lunchEnd: '13:00',
-                dinnerStart: '18:00',
-                dinnerEnd: '18:30'
-              };
-            }
-          } else {
-            breakSettings = {
-              lunchStart: '12:00',
-              lunchEnd: '13:00',
-              dinnerStart: '18:00',
-              dinnerEnd: '18:30'
-            };
-          }
-        } else {
-          breakSettings = {
-            lunchStart: sanitizeTimeText(data.lunch_start, '12:00'),
-            lunchEnd: sanitizeTimeText(data.lunch_end, '13:00'),
-            dinnerStart: sanitizeTimeText(data.dinner_start, '18:00'),
-            dinnerEnd: sanitizeTimeText(data.dinner_end, '18:30')
-          };
+          return await loadBreakSettingsFromLocalStorage(defaultSettings);
         }
-        syncBreakSettingsToInputs();
+        
+        return {
+          lunchStart: sanitizeTimeText(data.lunch_start, defaultSettings.lunchStart),
+          lunchEnd: sanitizeTimeText(data.lunch_end, defaultSettings.lunchEnd),
+          dinnerStart: sanitizeTimeText(data.dinner_start, defaultSettings.dinnerStart),
+          dinnerEnd: sanitizeTimeText(data.dinner_end, defaultSettings.dinnerEnd),
+        };
       } catch (e) {
-        console.error('Failed to load break settings:', e);
-        const raw = localStorage.getItem(getBreakSettingsStorageKey());
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw);
-            breakSettings = {
-              lunchStart: sanitizeTimeText(parsed.lunchStart, '12:00'),
-              lunchEnd: sanitizeTimeText(parsed.lunchEnd, '13:00'),
-              dinnerStart: sanitizeTimeText(parsed.dinnerStart, '18:00'),
-              dinnerEnd: sanitizeTimeText(parsed.dinnerEnd, '18:30')
-            };
-          } catch (e) {
-            breakSettings = {
-              lunchStart: '12:00',
-              lunchEnd: '13:00',
-              dinnerStart: '18:00',
-              dinnerEnd: '18:30'
-            };
-          }
-        }
-        syncBreakSettingsToInputs();
+        console.error('Failed to load break settings from DB:', e);
+        return await loadBreakSettingsFromLocalStorage(defaultSettings);
       }
     }
 
-    async function saveBreakSettings() {
+    async function loadBreakSettings() {
+      const defaultSettings = { lunchStart: '12:00', lunchEnd: '13:00', dinnerStart: '18:00', dinnerEnd: '18:30' };
+      if (!currentUsername) return defaultSettings;
+
+      if (supabaseClient) {
+        return await loadBreakSettingsFromDB(defaultSettings);
+      }
+      
+      return await loadBreakSettingsFromLocalStorage(defaultSettings);
+    }
+
+    async function saveBreakSettings(breakSettings) {
       localStorage.setItem(getBreakSettingsStorageKey(), JSON.stringify(breakSettings));
 
       if (!currentUsername || !supabaseClient) return;
@@ -1240,10 +1171,10 @@
       }
     }
 
-    function handleBreakSettingsChange() {
-      breakSettings = readBreakSettingsFromInputs();
-      syncBreakSettingsToInputs();
-      render();
+    async function handleBreakSettingsChange() {
+      const newSettings = readBreakSettingsFromInputs();
+      syncBreakSettingsToInputs(newSettings);
+      await render();
     }
 
     async function saveSettings() {
@@ -1255,9 +1186,9 @@
       btn.textContent = '保存中...';
 
       try {
-        breakSettings = readBreakSettingsFromInputs();
-        syncBreakSettingsToInputs();
-        await saveBreakSettings();
+        const newSettings = readBreakSettingsFromInputs();
+        syncBreakSettingsToInputs(newSettings);
+        await saveBreakSettings(newSettings);
         btn.textContent = '已保存！';
         setTimeout(() => {
           btn.textContent = originalText;
@@ -1272,7 +1203,7 @@
         }, 2000);
       }
       
-      render();
+      await render();
     }
 
     function isRecoveryFlowFromUrl() {
@@ -1668,13 +1599,11 @@
 
       let loginEmail = normalizeEmail(account);
       
-      // OPTIMIZATION 1: Check localStorage cache first before database query
       if (!account.includes('@')) {
         const cachedEmail = localStorage.getItem('username_email_' + account.toLowerCase());
         if (cachedEmail) {
           loginEmail = normalizeEmail(cachedEmail);
         } else {
-          // Only query database if not in cache
           const mappedEmail = await loadEmailByUsername(account);
           if (!mappedEmail) {
             errorEl.textContent = '用户名不存在';
@@ -1684,12 +1613,10 @@
             return;
           }
           loginEmail = mappedEmail;
-          // Cache the result for future logins
           localStorage.setItem('username_email_' + account.toLowerCase(), loginEmail);
         }
       }
 
-      // OPTIMIZATION 2: Authenticate first (most important step)
       const { error } = await supabaseClient.auth.signInWithPassword({ email: loginEmail, password });
       if (error) {
         errorEl.textContent = error.message;
@@ -1699,11 +1626,9 @@
         return;
       }
 
-      // OPTIMIZATION 3: Get session and switch to app immediately
       const { data } = await supabaseClient.auth.getSession();
       const session = data ? data.session : null;
       
-      // Get username from session metadata first (fast, no network request)
       const metadataUsername = session && session.user && session.user.user_metadata && session.user.user_metadata.username
         ? String(session.user.user_metadata.username).trim()
         : '';
@@ -1712,7 +1637,6 @@
       workDataCache = {};
       workDataCacheKey = null;
       
-      // Hide loading and show app immediately
       loginBtn.disabled = false;
       loginBtnText.style.display = 'inline';
       loginSpinner.style.display = 'none';
@@ -1720,26 +1644,21 @@
       document.getElementById('login-container').style.display = 'none';
       document.getElementById('app-container').style.display = 'block';
       document.getElementById('currentUser').textContent = `用户: ${currentUsername}`;
-      initApp();
+      await initApp();
       
-      // OPTIMIZATION 4: Defer non-critical database operations
-      // These run in background after app is visible
       setTimeout(async () => {
         try {
-          // Update app user record (not critical for login)
           await ensureAppUserForSession(session, account.includes('@') ? '' : account, loginEmail);
         } catch (e) {
           console.warn('ensure app user failed:', (e && e.message) ? e.message : e);
         }
         
         try {
-          // Load accurate username from database (background update)
           const dbUsername = await loadUsernameForSession(session);
           if (dbUsername && dbUsername !== currentUsername) {
             currentUsername = dbUsername;
             document.getElementById('currentUser').textContent = `用户: ${currentUsername}`;
-            // Reload break settings with correct username
-            loadBreakSettings();
+            await render();
           }
         } catch (e) {
           console.warn('load username failed:', (e && e.message) ? e.message : e);
@@ -1751,12 +1670,6 @@
       currentUsername = null;
       workDataCache = {};
       workDataCacheKey = null;
-      breakSettings = {
-        lunchStart: '12:00',
-        lunchEnd: '13:00',
-        dinnerStart: '18:00',
-        dinnerEnd: '18:30'
-      };
 
       if (supabaseClient) {
         await supabaseClient.auth.signOut();
@@ -1794,7 +1707,7 @@
           document.getElementById('login-container').style.display = 'none';
           document.getElementById('app-container').style.display = 'block';
           document.getElementById('currentUser').textContent = `用户: ${currentUsername}`;
-          initApp();
+          await initApp();
           return;
         }
       }
@@ -1899,12 +1812,12 @@
       render();
     }
 
-    function selectDate(dateStr) {
+    async function selectDate(dateStr) {
       currentSelectedDate = dateStr;
-      render();
+      await render();
     }
 
-    function onMonthChange() {
+    async function onMonthChange() {
       const yearSelect = document.getElementById('yearSelect');
       const monthSelect = document.getElementById('monthSelect');
       const newYear = parseInt(yearSelect.value, 10);
@@ -1919,7 +1832,7 @@
       }
 
       currentSelectedDate = formatDateLocal(new Date(selectedYear, selectedMonth, 1));
-      render();
+      await render();
     }
 
     function showManualModal() {
@@ -1937,10 +1850,14 @@
 
     async function render() {
       const seq = ++renderSeq;
+      const currentBreakSettings = await loadBreakSettings();
+      syncBreakSettingsToInputs(currentBreakSettings);
+
       await ensureMonthLoaded(selectedYear, selectedMonth);
       if (seq !== renderSeq) return;
-      renderCalendar();
-      renderDayDetails(currentSelectedDate);
+
+      renderCalendar(currentBreakSettings);
+      renderDayDetails(currentSelectedDate, currentBreakSettings);
     }
 
     function toggleBreakSettings() {
@@ -1956,11 +1873,10 @@
       }
     }
 
-    function initApp() {
+    async function initApp() {
       ensureAllTimeSelectOptions();
-      loadBreakSettings();
       initSelectors();
-      render();
+      await render();
     }
 
     function initSelectors() {
@@ -2005,7 +1921,7 @@
       }
     }
 
-    function renderCalendar() {
+    function renderCalendar(breakSettings) {
       const data = getData();
       const todayStr = getTodayKey();
       const year = selectedYear;
@@ -2037,7 +1953,8 @@
         const timesRaw = data[dateStr] || [];
         const times = normalizeTimes(timesRaw);
         const status = getStatus(times);
-        const hours = calculateHours(times, dateStr);
+        const detail = calculateDayHoursDetail(times, dateStr, breakSettings);
+        const hours = detail.netHours;
 
         if (status === 'ok') {
           totalMonthHours += hours;
@@ -2071,7 +1988,7 @@
       `;
     }
 
-    function renderDayDetails(date) {
+    function renderDayDetails(date, breakSettings) {
       const data = getData();
       const timesRaw = data[date] || [];
       const times = normalizeTimes(timesRaw);
@@ -2114,7 +2031,7 @@
 
       const summaryDiv = document.createElement('div');
       if (status === 'ok') {
-        const detail = calculateDayHoursDetail(times, date);
+        const detail = calculateDayHoursDetail(times, date, breakSettings);
         summaryDiv.innerHTML = `
           <div style="font-weight: bold; color: var(--success-color);">当日总工时: ${detail.netHours.toFixed(2)} 小时</div>
           <div style="color: var(--text-secondary); margin-top: 4px;">打卡跨度: ${detail.totalHours.toFixed(2)} 小时，休息扣减: ${detail.deductionHours.toFixed(2)} 小时</div>
@@ -2138,7 +2055,8 @@
       const endMinutes = timeTextToMinutes(endText);
       if (startMinutes === null || endMinutes === null || endMinutes <= startMinutes) return 0;
 
-      const startDate = new Date(`${dateKey}T00:00:00`);
+      const startDate = new Date(firstTs);
+      startDate.setHours(0, 0, 0, 0);
       const breakStartTs = new Date(startDate.getTime() + startMinutes * 60 * 1000);
       const breakEndTs = new Date(startDate.getTime() + endMinutes * 60 * 1000);
 
@@ -2148,13 +2066,13 @@
       return (overlapEndMs - overlapStartMs) / (1000 * 60 * 60);
     }
 
-    function calculateBreakDeductionHours(dateKey, firstTs, lastTs) {
+    function calculateBreakDeductionHours(dateKey, firstTs, lastTs, breakSettings) {
       const lunchHours = calculateSingleBreakHours(dateKey, breakSettings.lunchStart, breakSettings.lunchEnd, firstTs, lastTs);
       const dinnerHours = calculateSingleBreakHours(dateKey, breakSettings.dinnerStart, breakSettings.dinnerEnd, firstTs, lastTs);
       return lunchHours + dinnerHours;
     }
 
-    function calculateDayHoursDetail(times, dateKey) {
+    function calculateDayHoursDetail(times, dateKey, breakSettings) {
       if (times.length < 2) {
         return { totalHours: 0, deductionHours: 0, netHours: 0 };
       }
@@ -2163,13 +2081,9 @@
       const firstTs = sorted[0];
       const lastTs = sorted[sorted.length - 1];
       const dayKey = dateKey || formatDateLocal(firstTs);
-      const deductionHours = calculateBreakDeductionHours(dayKey, firstTs, lastTs);
+      const deductionHours = calculateBreakDeductionHours(dayKey, firstTs, lastTs, breakSettings);
       const netHours = Math.max(0, totalHours - deductionHours);
       return { totalHours, deductionHours, netHours };
-    }
-
-    function calculateHours(times, dateKey) {
-      return calculateDayHoursDetail(times, dateKey).netHours;
     }
 
     function getStatus(times) {
