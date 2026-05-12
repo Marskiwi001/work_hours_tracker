@@ -780,6 +780,12 @@
         <label for="loginPassword">密码</label>
         <input id="loginPassword" type="password" class="form-control" placeholder="请输入密码">
       </div>
+      <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; font-size: 14px;">
+        <label for="rememberUsername" style="display: flex; align-items: center; gap: 6px; font-weight: normal; color: var(--text-secondary); cursor: pointer;">
+          <input type="checkbox" id="rememberUsername" style="width: 16px; height: 16px; cursor: pointer;">
+          记住用户名
+        </label>
+      </div>
       <button id="loginBtn" class="btn-primary" onclick="handleLogin()" style="width: 100%; position: relative;">
         <span id="loginBtnText">登录</span>
         <span id="loginSpinner" class="loading-spinner"></span>
@@ -1576,6 +1582,7 @@
 
       const account = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
+      const rememberUsername = document.getElementById('rememberUsername').checked;
 
       if (!account) {
         errorEl.textContent = '请输入用户名或邮箱';
@@ -1624,6 +1631,12 @@
         loginBtnText.style.display = 'inline';
         loginSpinner.style.display = 'none';
         return;
+      }
+
+      if (rememberUsername) {
+        localStorage.setItem('rememberedUsername', account);
+      } else {
+        localStorage.removeItem('rememberedUsername');
       }
 
       const { data } = await supabaseClient.auth.getSession();
@@ -1677,6 +1690,12 @@
 
       document.getElementById('login-container').style.display = 'block';
       document.getElementById('app-container').style.display = 'none';
+
+      const rememberedUsername = localStorage.getItem('rememberedUsername');
+      if (rememberedUsername) {
+        document.getElementById('loginEmail').value = rememberedUsername;
+        document.getElementById('rememberUsername').checked = true;
+      }
       document.getElementById('loginPassword').value = '';
     }
 
@@ -1688,12 +1707,23 @@
             showResetPassword();
           }
         });
-        const { data } = await supabaseClient.auth.getSession();
-        const session = data ? data.session : null;
+
+        let session = null;
+        try {
+          const { data, error } = await supabaseClient.auth.getSession();
+          if (error) throw error;
+          session = data ? data.session : null;
+        } catch (error) {
+          console.error("Failed to get session, signing out:", error);
+          await supabaseClient.auth.signOut();
+          session = null;
+        }
+
         if (isPasswordRecoveryFlow || isRecoveryFlowFromUrl()) {
           showResetPassword();
           return;
         }
+
         if (session && session.user) {
           try {
             await ensureAppUserForSession(session, '', session.user.email);
@@ -1714,6 +1744,12 @@
 
       document.getElementById('login-container').style.display = 'block';
       document.getElementById('app-container').style.display = 'none';
+
+      const rememberedUsername = localStorage.getItem('rememberedUsername');
+      if (rememberedUsername) {
+        document.getElementById('loginEmail').value = rememberedUsername;
+        document.getElementById('rememberUsername').checked = true;
+      }
     }
 
     async function clockIn() {
